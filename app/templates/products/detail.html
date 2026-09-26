@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.name }} — Product Stock Details{% endblock %}
+{% block header_title %}Product Overview & Location Breakdown{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 24px;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-box" style="color: var(--primary);"></i>
+      {{ product.name }}
+      <code style="font-size: 13px; margin-left: 10px; background: #f1f5f9; padding: 2px 8px; border-radius: 4px;">{{ product.sku }}</code>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <a href="{{ url_for('products.edit', id=product.id) }}" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-pen-to-square"></i> Edit Product
+      </a>
+      <a href="{{ url_for('products.index') }}" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left"></i> Back to Catalog
+      </a>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 0;">
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Category</div>
+        <div class="kpi-value" style="font-size: 18px; margin-top: 6px;">{{ product.category.name }}</div>
+      </div>
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Total Available Stock</div>
+        <div class="kpi-value" style="font-size: 22px; margin-top: 6px; color: var(--primary);">
+          {{ product.total_stock }} {{ product.unit }}
+        </div>
+      </div>
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Reorder Level</div>
+        <div class="kpi-value" style="font-size: 18px; margin-top: 6px;">
+          {{ product.reorder_level }} {{ product.unit }}
+        </div>
+      </div>
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Stock Status</div>
+        <div style="margin-top: 8px;">
+          {% set status = product.stock_status %}
+          {% if status == 'In Stock' %}
+            <span class="badge badge-in-stock"><i class="fa-solid fa-circle-check"></i> In Stock</span>
+          {% elif status == 'Low Stock' %}
+            <span class="badge badge-low-stock"><i class="fa-solid fa-triangle-exclamation"></i> Low Stock</span>
+          {% else %}
+            <span class="badge badge-out-of-stock"><i class="fa-solid fa-circle-xmark"></i> Out of Stock</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <!-- STOCK AVAILABILITY BY LOCATION -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-warehouse" style="color: var(--primary);"></i>
+        Stock Availability by Location
+      </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Warehouse</th>
+              <th>Location Name</th>
+              <th>Location Code</th>
+              <th>Stock Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for balance in balances %}
+            <tr>
+              <td><strong>{{ balance.location.warehouse.name }}</strong></td>
+              <td>{{ balance.location.name }}</td>
+              <td><code>{{ balance.location.code }}</code></td>
+              <td>
+                <strong style="font-size: 15px; color: var(--text-primary);">
+                  {{ balance.quantity }} {{ product.unit }}
+                </strong>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                No stock recorded in any warehouse location yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCT MOVEMENT HISTORY -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i>
+        Stock Movement Audit Log
+      </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Ref</th>
+              <th>Location</th>
+              <th>Change</th>
+              <th>After</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in ledger_history %}
+            <tr>
+              <td style="font-size: 11px; color: var(--text-muted);">{{ log.created_at.strftime('%b %d, %H:%M') }}</td>
+              <td><strong>{{ log.reference }}</strong></td>
+              <td style="font-size: 12px;">{{ log.location.name }}</td>
+              <td>
+                {% if log.quantity_change > 0 %}
+                  <span style="color: var(--success); font-weight: 700;">+{{ log.quantity_change }}</span>
+                {% else %}
+                  <span style="color: var(--danger); font-weight: 700;">{{ log.quantity_change }}</span>
+                {% endif %}
+              </td>
+              <td style="font-weight: 600;">{{ log.quantity_after }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                No movement history recorded.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

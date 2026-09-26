@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Inventory Intelligence — StockSense{% endblock %}
+{% block header_title %}Level 1 — AI Demand Forecasting & Inventory Intelligence{% endblock %}
+
+{% block content %}
+<!-- HEADER ACTION & HEALTH SCORE BANNER -->
+<div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 28px; border-radius: var(--radius-xl); margin-bottom: 28px; box-shadow: var(--shadow-md);">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+    <div>
+      <div style="font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #38bdf8; text-transform: uppercase;">
+        <i class="fa-solid fa-brain me-1"></i> AI Intelligence Core
+      </div>
+      <h2 style="font-size: 24px; font-weight: 800; margin: 4px 0;">Inventory Health & Demand Intelligence</h2>
+      <div style="font-size: 14px; color: #94a3b8;">
+        Real-time predictive risk modeling, automated reorder triggers, and ABC/FSN velocity analytics.
+      </div>
+      <div style="margin-top: 12px;">
+        <a href="/intelligence/simulation" class="btn btn-secondary btn-sm" style="background: rgba(168, 85, 247, 0.2); border: 1px solid #a855f7; color: #c084fc;">
+          <i class="fa-solid fa-flask me-1"></i> Launch What-If Scenario Simulator
+        </a>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 24px; background: rgba(255, 255, 255, 0.08); padding: 16px 24px; border-radius: var(--radius-lg); border: 1px solid rgba(255, 255, 255, 0.12);">
+      <div style="text-align: center;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1;">Health Score</div>
+        <div style="font-size: 32px; font-weight: 900; color: {% if health_score >= 80 %}#10b981{% elif health_score >= 60 %}#f59e0b{% else %}#ef4444{% endif %}; line-height: 1.1;">
+          {{ health_score }}%
+        </div>
+      </div>
+      <div style="height: 36px; width: 1px; background: rgba(255, 255, 255, 0.15);"></div>
+      <div>
+        <div style="font-size: 12px; font-weight: 700; color: #f8fafc;">
+          {% if health_score >= 80 %}
+            <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Excellent System Health
+          {% elif health_score >= 60 %}
+            <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i> Moderate Reorder Needs
+          {% else %}
+            <i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> High Stockout Risk
+          {% endif %}
+        </div>
+        <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Updated dynamically from real-time stock logs</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTO-REORDER QUICK ACTION MODAL / BOX -->
+{% if reorder_needed %}
+<div class="card" style="border-left: 4px solid var(--warning); margin-bottom: 28px;">
+  <div class="card-body" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <div style="font-weight: 700; font-size: 15px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--warning);"></i>
+        AI Reorder Recommendation Triggered
+      </div>
+      <div style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">
+        <strong>{{ reorder_needed|length }} products</strong> have reached their calculated Reorder Point.
+      </div>
+    </div>
+
+    {% if current_user.role in ['admin', 'manager'] %}
+    <form action="{{ url_for('intelligence.auto_reorder') }}" method="POST" style="display: flex; gap: 12px; align-items: center;">
+      <select name="destination_location_id" class="form-select" style="min-width: 220px;" required>
+        <option value="">Select Target Location...</option>
+        {% for loc in locations %}
+          <option value="{{ loc.id }}">{{ loc.full_name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary" onclick="return confirm('Generate AI Auto-Replenishment Receipt Draft?')">
+        <i class="fa-solid fa-robot"></i> Generate AI Reorder Draft
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- AI DEMAND FORECASTING & SMART REORDER TABLE -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-chart-line" style="color: var(--primary);"></i>
+      AI Demand Forecasting & Predictive Risk Model
+    </div>
+    <span class="badge badge-op-transfer">30-Day Moving Horizon</span>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Product & SKU</th>
+            <th>Current Stock</th>
+            <th>Daily Burn Rate</th>
+            <th>30-Day AI Forecast</th>
+            <th>Days Remaining</th>
+            <th>Safety Stock</th>
+            <th>Reorder Point</th>
+            <th>Suggested Reorder Qty</th>
+            <th>Predictive Risk</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rec in reorder_recommendations %}
+          {% set fc = forecasts[rec.product.id] %}
+          <tr>
+            <td>
+              <strong>{{ rec.product.name }}</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">SKU: {{ rec.product.sku }}</div>
+            </td>
+            <td><strong style="font-size: 15px;">{{ rec.total_stock }} {{ rec.product.unit }}</strong></td>
+            <td>{{ fc.daily_burn_rate }} {{ rec.product.unit }}/day</td>
+            <td>
+              <strong style="color: var(--primary);">{{ fc.forecast_30d }} {{ rec.product.unit }}</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">Trend: {{ fc.trend }}</div>
+            </td>
+            <td>
+              {% if rec.days_remaining <= 5 %}
+                <span style="color: var(--danger); font-weight: 800;">{{ rec.days_remaining }} days</span>
+              {% elif rec.days_remaining <= 15 %}
+                <span style="color: var(--warning); font-weight: 700;">{{ rec.days_remaining }} days</span>
+              {% else %}
+                <span>{{ rec.days_remaining if rec.days_remaining < 500 else '999+' }} days</span>
+              {% endif %}
+            </td>
+            <td>{{ rec.safety_stock }} {{ rec.product.unit }}</td>
+            <td>{{ rec.reorder_point }} {{ rec.product.unit }}</td>
+            <td>
+              {% if rec.needs_reorder %}
+                <strong style="color: var(--warning); font-size: 15px;">+{{ rec.suggested_reorder_qty }} {{ rec.product.unit }}</strong>
+              {% else %}
+                <span style="color: var(--text-light);">0</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge" style="background-color: {{ rec.risk_color }}22; color: {{ rec.risk_color }}; border: 1px solid {{ rec.risk_color }}66;">
+                {{ rec.risk_level }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <!-- ABC & FSN CLASSIFICATION MATRIX -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-layer-group" style="color: var(--primary);"></i>
+        SKU Classification (ABC & FSN Matrix)
+      </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Total Value</th>
+              <th>ABC Class</th>
+              <th>FSN Velocity</th>
+              <th>Movement Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in abc_matrix %}
+            <tr>
+              <td><strong>{{ item.product.name }}</strong></td>
+              <td>${{ "{:,.2f}".format(item.total_value) }}</td>
+              <td>
+                {% if item.abc_class == 'A' %}
+                  <span class="badge badge-canceled" style="font-weight: 800;">Class A (High Value)</span>
+                {% elif item.abc_class == 'B' %}
+                  <span class="badge badge-waiting" style="font-weight: 800;">Class B (Medium)</span>
+                {% else %}
+                  <span class="badge badge-draft" style="font-weight: 800;">Class C (Low Value)</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if item.fsn_class == 'F' %}
+                  <span class="badge badge-done"><i class="fa-solid fa-bolt me-1"></i> Fast Moving</span>
+                {% elif item.fsn_class == 'S' %}
+                  <span class="badge badge-ready">Slow Moving</span>
+                {% else %}
+                  <span class="badge badge-draft">Non-Moving</span>
+                {% endif %}
+              </td>
+              <td style="font-size: 12px;">{{ item.daily_velocity }} units/day</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUPPLIER INTELLIGENCE CARD -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-building-user" style="color: var(--primary);"></i>
+        Supplier Intelligence & Reliability
+      </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <ul style="list-style: none; margin: 0; padding: 0;">
+        {% for s in suppliers %}
+        <li style="padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-weight: 700; font-size: 14px;">{{ s.name }}</div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              Code: {{ s.code }} | Lead Time: {{ s.lead_time_days }} Days
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="badge badge-done" style="font-size: 13px;">
+              {{ s.reliability_score }}% Reliability
+            </span>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+              On-Time: {{ s.on_time_rate }}%
+            </div>
+          </div>
+        </li>
+        {% else %}
+        <li style="padding: 24px; text-align: center; color: var(--text-muted);">
+          Supplier metrics currently being computed.
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

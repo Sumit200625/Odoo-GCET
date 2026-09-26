@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — Store Inventory Split (Shelf vs Backroom){% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">Store Inventory Split (Shelf vs Backroom vs Warehouse)</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Multi-echelon stock breakdown showing front-of-house shelf stock, backroom buffer stock, and warehouse supply.</p>
+</div>
+
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-store" style="color: var(--accent-cyan); margin-right: 0.5rem;"></i> Store Inventory Breakdown Matrix</span>
+    </div>
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>SKU Code</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Shelf Stock</th>
+                    <th>Backroom Stock</th>
+                    <th>Warehouse Stock</th>
+                    <th>Total Inventory</th>
+                    <th>Active Price</th>
+                    <th>Replenish Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td><code>{{ p.sku }}</code></td>
+                    <td><strong>{{ p.name }}</strong></td>
+                    <td>{{ p.category.name if p.category else 'General' }}</td>
+                    <td><strong style="color: var(--accent-cyan);">{{ p.shelf_stock }} {{ p.unit }}</strong></td>
+                    <td><strong style="color: var(--accent-indigo);">{{ p.backroom_stock }} {{ p.unit }}</strong></td>
+                    <td>{{ p.warehouse_stock }} {{ p.unit }}</td>
+                    <td><strong>{{ p.total_stock }} {{ p.unit }}</strong></td>
+                    <td>${{ p.active_price }}</td>
+                    <td>
+                        {% if p.shelf_stock <= 5.0 %}
+                        <span class="badge badge-critical">Shelf Low</span>
+                        {% else %}
+                        <span class="badge badge-healthy">Optimal</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — Visual Warehouse Layout & Slotting{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">Visual Warehouse Layout & Smart Slotting</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Interactive rack/bin occupancy grid, directed put-away confirmation, picking path optimization, and slotting simulations.</p>
+</div>
+
+<!-- Warehouse Space KPIs -->
+<div class="grid-container">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Volume Utilization</span>
+            <div class="kpi-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan);"><i class="fa-solid fa-cubes"></i></div>
+        </div>
+        <div class="kpi-val">{{ analytics.volume_utilization_pct }}%</div>
+        <div class="kpi-subtext">Free Volume: <strong>{{ analytics.free_capacity_units }} units</strong></div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Weight Capacity Utilization</span>
+            <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo);"><i class="fa-solid fa-weight-hanging"></i></div>
+        </div>
+        <div class="kpi-val">{{ analytics.weight_utilization_pct }}%</div>
+        <div class="kpi-subtext">Total Storage Weight Limit</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Pending Putaway Tasks</span>
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald);"><i class="fa-solid fa-truck-ramp-box"></i></div>
+        </div>
+        <div class="kpi-val">{{ putaway_tasks|length }}</div>
+        <div class="kpi-subtext">Directed Location Scans</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Pending Picking Tasks</span>
+            <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-amber);"><i class="fa-solid fa-box-open"></i></div>
+        </div>
+        <div class="kpi-val">{{ pick_tasks|length }}</div>
+        <div class="kpi-subtext">Optimized Wave Pick Path</div>
+    </div>
+</div>
+
+<!-- Visual Storage Grid -->
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-layer-group" style="color: var(--accent-cyan); margin-right: 0.5rem;"></i> Storage Rack & Bin Occupancy Grid Map</span>
+        <a href="{{ url_for('space_management.slotting_simulation') }}" class="btn-primary" style="font-size: 0.8rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> Run Smart Slotting Simulation</a>
+    </div>
+
+    <div class="rack-grid">
+        {% for loc in analytics.locations %}
+        <div class="rack-cell">
+            <div class="rack-code">{{ loc.code }}</div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.2rem;">{{ loc.zone }} &bull; Level {{ loc.picking_height_level }}</div>
+            <div class="capacity-bar-container">
+                <div class="capacity-bar-fill" style="width: {{ loc.occupancy_pct }}%; background: {% if loc.occupancy_pct >= 90 %}var(--accent-rose){% elif loc.occupancy_pct >= 75 %}var(--accent-amber){% else %}var(--accent-emerald){% endif %};"></div>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.35rem;">
+                {{ loc.occupancy_pct }}% ({{ loc.available_capacity }} free)
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Directed Putaway Section -->
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-dolly" style="color: var(--accent-emerald); margin-right: 0.5rem;"></i> Directed Put-Away Tasks</span>
+    </div>
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>Task Code</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Recommended Storage Bin</th>
+                    <th>Scan Confirmation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in putaway_tasks %}
+                <tr>
+                    <td><code>{{ task.task_code }}</code></td>
+                    <td><strong>{{ task.product.name }}</strong> ({{ task.product.sku }})</td>
+                    <td>{{ task.quantity }} {{ task.product.unit }}</td>
+                    <td><strong style="color: var(--accent-cyan);">{{ task.recommended_location.full_name }}</strong></td>
+                    <td>
+                        <form action="{{ url_for('space_management.confirm_putaway', task_id=task.id) }}" method="POST" style="display: flex; gap: 0.5rem;">
+                            <input type="hidden" name="actual_location_id" value="{{ task.recommended_location_id }}">
+                            <button type="submit" class="btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fa-solid fa-qrcode"></i> Confirm Putaway</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted);">No pending put-away tasks.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

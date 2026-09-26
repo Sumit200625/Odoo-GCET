@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — Executive Overview Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">Executive Intelligence Overview</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Real-time enterprise warehouse performance, financial risk exposure, and predictive KPIs.</p>
+</div>
+
+<!-- Executive Top KPI Cards -->
+<div class="grid-container">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Total Inventory Value</span>
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald);"><i class="fa-solid fa-sack-dollar"></i></div>
+        </div>
+        <div class="kpi-val">${{ "{:,.2f}".format(data.total_inventory_value) }}</div>
+        <div class="kpi-subtext">Working Capital In Stock</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Inventory Health Index</span>
+            <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo);"><i class="fa-solid fa-heart-pulse"></i></div>
+        </div>
+        <div class="kpi-val" style="color: {% if data.health_score >= 85 %}var(--accent-emerald){% else %}var(--accent-amber){% endif %};">
+            {{ data.health_score }}%
+        </div>
+        <div class="kpi-subtext">Category: <strong>{{ data.health_category }}</strong></div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Stockout Risk Value</span>
+            <div class="kpi-icon" style="background: rgba(244, 63, 94, 0.15); color: var(--accent-rose);"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        </div>
+        <div class="kpi-val" style="color: var(--accent-rose);">${{ "{:,.2f}".format(data.stockout_risk_value) }}</div>
+        <div class="kpi-subtext">Potential Revenue at Risk</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Space Utilization</span>
+            <div class="kpi-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan);"><i class="fa-solid fa-cubes"></i></div>
+        </div>
+        <div class="kpi-val">{{ data.warehouse_utilization_pct }}%</div>
+        <div class="kpi-subtext">Total Usable Volume Occupied</div>
+    </div>
+</div>
+
+<!-- Interactive Chart & Key Performance Row -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <div class="section-card">
+        <div class="section-title">
+            <span><i class="fa-solid fa-chart-area" style="color: var(--accent-indigo); margin-right: 0.5rem;"></i> Predictive Demand & Forecast Accuracy Trend</span>
+            <span class="badge badge-healthy">AI Model Confidence: {{ data.forecast_accuracy_pct }}%</span>
+        </div>
+        <div style="height: 300px; position: relative;">
+            <canvas id="executiveForecastChart"></canvas>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">
+            <span><i class="fa-solid fa-shield-halved" style="color: var(--accent-cyan); margin-right: 0.5rem;"></i> Executive Scorecard</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.35rem;">
+                    <span>Supplier Performance Score</span>
+                    <strong>{{ data.supplier_performance_score }}/100</strong>
+                </div>
+                <div class="capacity-bar-container">
+                    <div class="capacity-bar-fill" style="width: {{ data.supplier_performance_score }}%; background: var(--accent-emerald);"></div>
+                </div>
+            </div>
+
+            <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.35rem;">
+                    <span>Order Fulfilment SLA</span>
+                    <strong>{{ data.fulfilment_rate_pct }}%</strong>
+                </div>
+                <div class="capacity-bar-container">
+                    <div class="capacity-bar-fill" style="width: {{ data.fulfilment_rate_pct }}%; background: var(--accent-cyan);"></div>
+                </div>
+            </div>
+
+            <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.35rem;">
+                    <span>Inventory Turnover Ratio</span>
+                    <strong>{{ data.inventory_turnover_ratio }}x / yr</strong>
+                </div>
+                <div class="capacity-bar-container">
+                    <div class="capacity-bar-fill" style="width: 70%; background: var(--accent-indigo);"></div>
+                </div>
+            </div>
+
+            <div style="background: rgba(255, 255, 255, 0.03); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-top: 0.5rem;">
+                <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 0.35rem;"><i class="fa-solid fa-lightbulb"></i> Executive Recommendation</h4>
+                <p style="font-size: 0.8rem; color: var(--text-secondary);">Reallocate $12,500 working capital from overstocked Cement Bags to fast-moving Microcontrollers to optimize turnover.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var ctx = document.getElementById('executiveForecastChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8'],
+            datasets: [
+                {
+                    label: 'Actual Demand Outflow',
+                    data: [120, 135, 140, 155, 160, 175, 180, 195],
+                    borderColor: '#06b6d4',
+                    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'AI Forecasted Demand',
+                    data: [118, 132, 142, 150, 162, 170, 185, 200],
+                    borderColor: '#6366f1',
+                    borderDash: [5, 5],
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: '#9ca3af' } }
+            },
+            scales: {
+                x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — Intelligent Alert Center{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">Intelligent Alert & Exception Center</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Deduplicated smart notifications across 5 severity levels with financial impact and resolution tracking.</p>
+</div>
+
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-bell" style="color: var(--accent-rose); margin-right: 0.5rem;"></i> System Alert Feed</span>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="?status=Open" class="btn-secondary {% if status_filter == 'Open' %}btn-primary{% endif %}" style="font-size: 0.78rem;">Open</a>
+            <a href="?status=Resolved" class="btn-secondary {% if status_filter == 'Resolved' %}btn-primary{% endif %}" style="font-size: 0.78rem;">Resolved</a>
+            <a href="?status=All" class="btn-secondary {% if status_filter == 'All' %}btn-primary{% endif %}" style="font-size: 0.78rem;">All</a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>Alert Code</th>
+                    <th>Severity</th>
+                    <th>Title & Description</th>
+                    <th>Financial Impact</th>
+                    <th>Recommended Mitigation</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in alerts %}
+                <tr>
+                    <td><code>{{ a.alert_code }}</code></td>
+                    <td>
+                        <span class="badge {% if a.severity == 'Critical' %}badge-critical{% elif a.severity == 'High' %}badge-high{% else %}badge-info{% endif %}">
+                            {{ a.severity }}
+                        </span>
+                    </td>
+                    <td>
+                        <strong>{{ a.title }}</strong>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">{{ a.description }}</div>
+                    </td>
+                    <td style="color: var(--accent-rose); font-weight: 700;">${{ "{:,.2f}".format(a.financial_impact) }}</td>
+                    <td style="font-size: 0.82rem; color: var(--accent-emerald);">{{ a.recommended_action }}</td>
+                    <td><span class="badge {% if a.status == 'Open' %}badge-high{% else %}badge-healthy{% endif %}">{{ a.status }}</span></td>
+                    <td>
+                        {% if a.status == 'Open' %}
+                        <form action="{{ url_for('alerts.resolve', alert_id=a.id) }}" method="POST">
+                            <button type="submit" class="btn-primary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">Resolve</button>
+                        </form>
+                        {% else %}
+                        <span style="font-size: 0.78rem; color: var(--text-muted);">Resolved</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted);">No alerts found for selected filter.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

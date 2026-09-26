@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}Festival & Event Intelligence - StockSense{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-calendar-event text-warning me-2"></i>Festival & Event Intelligence Center</h2>
+            <p class="text-muted mb-0">Predict seasonal demand spikes, automate safety stock buffers, and manage 11-step festival procurement & clearance.</p>
+        </div>
+        <div>
+            <span class="badge bg-warning text-dark px-3 py-2 fs-6"><i class="bi bi-stars me-1"></i> Seasonal Demand Engine Active</span>
+        </div>
+    </div>
+
+    <!-- Festival Event Selector Grid -->
+    <div class="row g-3 mb-4">
+        {% for ev in events %}
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm {{ 'border-start border-warning border-4' if ev.id == selected_event_id else '' }} h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge {{ 'bg-success' if ev.status == 'ACTIVE' else 'bg-primary' }}">{{ ev.status }}</span>
+                        <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ ev.start_date.strftime('%b %d') }} - {{ ev.end_date.strftime('%b %d') }}</small>
+                    </div>
+                    <h5 class="fw-bold card-title text-dark mb-1">{{ ev.name }}</h5>
+                    <p class="small text-muted mb-2">Target Uplift: <strong class="text-warning">{{ ev.expected_demand_uplift }}x</strong> regular demand</p>
+                    <a href="{{ url_for('festivals.index', event_id=ev.id) }}" class="btn btn-sm w-100 {{ 'btn-warning fw-bold' if ev.id == selected_event_id else 'btn-outline-secondary' }}">
+                        {% if ev.id == selected_event_id %}
+                            <i class="bi bi-check-circle-fill me-1"></i> Selected Event
+                        {% else %}
+                            Inspect Festival Plan
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if wizard %}
+    <!-- 11-Step Festival Wizard Analysis Panel -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-0 fw-bold"><i class="bi bi-diagram-3 me-2 text-warning"></i>11-Step Festival Planning Wizard: {{ wizard.event_name }}</h4>
+                <small class="text-light opacity-75">Automated procurement, inventory allocation, and risk breakdown</small>
+            </div>
+            <form method="POST" action="{{ url_for('festivals.clearance', festival_id=wizard.event_id) }}">
+                <button type="submit" class="btn btn-sm btn-outline-warning fw-bold" onclick="return confirm('Execute post-event 30% clearance markdown on leftover stock?')">
+                    <i class="bi bi-percent me-1"></i> Step 11: Execute Clearance Markdown
+                </button>
+            </form>
+        </div>
+        <div class="card-body">
+            <!-- 11-Step Progress Bar -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between small text-muted mb-2 fw-bold">
+                    <span>1. Selection</span>
+                    <span>2. Context</span>
+                    <span>3. History</span>
+                    <span>4. AI Forecast</span>
+                    <span>5. Promo</span>
+                    <span>6. Safety Stock</span>
+                    <span>7. Suppliers</span>
+                    <span>8. Storage</span>
+                    <span>9. Approval</span>
+                    <span>10. Live</span>
+                    <span>11. Clearance</span>
+                </div>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar" style="width: 82%;"></div>
+                </div>
+            </div>
+
+            <!-- Financial Summary Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded text-center">
+                        <small class="text-muted fw-bold text-uppercase">Forecasted Festival Revenue</small>
+                        <h4 class="fw-bold text-success mb-0">${{ "%.2f"|format(wizard.summary.expected_revenue) }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded text-center">
+                        <small class="text-muted fw-bold text-uppercase">Total Order Quantity</small>
+                        <h4 class="fw-bold text-dark mb-0">{{ wizard.summary.total_order_qty }} units</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded text-center">
+                        <small class="text-muted fw-bold text-uppercase">Procurement Cost</small>
+                        <h4 class="fw-bold text-primary mb-0">${{ "%.2f"|format(wizard.summary.total_order_cost) }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded text-center">
+                        <small class="text-muted fw-bold text-uppercase">Expected Gross Margin</small>
+                        <h4 class="fw-bold text-warning mb-0">${{ "%.2f"|format(wizard.summary.expected_margin) }}</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Steps Grid -->
+            <div class="row g-4">
+                <!-- Left: Category Breakdown Table -->
+                <div class="col-lg-8">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-box-seam me-2 text-primary"></i>Category & SKU Festival Allocations</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Category / SKU</th>
+                                    <th>Base Demand</th>
+                                    <th>Uplift</th>
+                                    <th>Festival Demand</th>
+                                    <th>Safety Stock</th>
+                                    <th>Rec. Order</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for step in wizard.steps %}
+                                    {% if step.step_name == 'Step 4: AI Demand Forecast' %}
+                                        {% for cat, val in step.category_breakdown.items() %}
+                                        <tr>
+                                            <td class="fw-bold text-primary"><i class="bi bi-folder2-open me-1"></i>{{ cat }}</td>
+                                            <td>{{ val.baseline }} units</td>
+                                            <td><span class="badge bg-warning text-dark">{{ val.multiplier }}x</span></td>
+                                            <td class="fw-bold text-dark">{{ val.forecasted }} units</td>
+                                            <td><span class="badge bg-secondary">+15% buffer</span></td>
+                                            <td><span class="badge bg-success">{{ (val.forecasted * 1.15)|round|int }} units</span></td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right: Step Insights -->
+                <div class="col-lg-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-lightbulb me-2 text-warning"></i>Intelligence Step Trail</h5>
+                    <div class="accordion" id="wizardAccordion">
+                        {% for step in wizard.steps %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ loop.index }}">
+                                <button class="accordion-button collapsed py-2 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}">
+                                    <span class="badge bg-warning text-dark me-2">{{ loop.index }}</span> {{ step.step_name }}
+                                </button>
+                            </h2>
+                            <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#wizardAccordion">
+                                <div class="accordion-body small">
+                                    {% if step.step_name == 'Step 1: Event Selection' %}
+                                        Selected: <strong>{{ step.event }}</strong>. Peak demand expected around day 3 of event.
+                                    {% elif step.step_name == 'Step 5: Promotion Configuration' %}
+                                        Promotion Uplift: <strong>{{ step.promo_uplift }}</strong>. Margin impact evaluated.
+                                    {% elif step.step_name == 'Step 8: Storage Capacity Audit' %}
+                                        Storage Required: <strong>{{ step.storage_req_units }} units</strong>. Capacity status: <span class="badge bg-success">{{ step.capacity_status }}</span>.
+                                    {% else %}
+                                        Step validated automatically by AI planning engine.
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

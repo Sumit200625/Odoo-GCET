@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — Daily Operations & Compliance Center{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">Daily Operations & Audit Logs</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Tasks due today, critical alerts, pending approvals, and permanent move ledger transaction history.</p>
+</div>
+
+<!-- Critical Alerts Section -->
+{% if data.critical_alerts %}
+<div class="section-card" style="border-left: 4px solid var(--accent-rose); background: rgba(244, 63, 94, 0.05);">
+    <div class="section-title">
+        <span><i class="fa-solid fa-bell" style="color: var(--accent-rose); margin-right: 0.5rem;"></i> Critical System Alerts Requiring Immediate Action ({{ data.critical_alerts|length }})</span>
+        <a href="{{ url_for('alerts.index') }}" class="btn-primary" style="font-size: 0.8rem; background: var(--accent-rose);">Open Alert Center</a>
+    </div>
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>Alert Code</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Financial Impact</th>
+                    <th>Recommended Mitigation</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in data.critical_alerts %}
+                <tr>
+                    <td><code>{{ a.alert_code }}</code></td>
+                    <td><strong>{{ a.title }}</strong></td>
+                    <td><span class="badge badge-critical">{{ a.alert_type }}</span></td>
+                    <td style="color: var(--accent-rose);">${{ "{:,.2f}".format(a.financial_impact) }}</td>
+                    <td style="font-size: 0.82rem; color: var(--text-secondary);">{{ a.recommended_action }}</td>
+                    <td>
+                        <form action="{{ url_for('alerts.resolve', alert_id=a.id) }}" method="POST">
+                            <button type="submit" class="btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">Acknowledge & Resolve</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Permanent Stock Ledger Transaction Audit History -->
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-book-journal-whills" style="color: var(--accent-indigo); margin-right: 0.5rem;"></i> Immutable Stock Ledger Transaction Log</span>
+        <a href="{{ url_for('ledger.index') }}" class="btn-secondary" style="font-size: 0.8rem;">View Full Ledger History</a>
+    </div>
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>Txn ID</th>
+                    <th>Timestamp</th>
+                    <th>Operation Type</th>
+                    <th>Reference</th>
+                    <th>Product SKU</th>
+                    <th>Quantity Change</th>
+                    <th>Before &rarr; After</th>
+                    <th>Executing User</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in data.recent_movements %}
+                <tr>
+                    <td><code>{{ log.transaction_id }}</code></td>
+                    <td style="font-size: 0.78rem; color: var(--text-muted);">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td><span class="badge badge-info">{{ log.operation_type }}</span></td>
+                    <td><code>{{ log.reference }}</code></td>
+                    <td><strong>{{ log.product.name if log.product else 'SKU' }}</strong> ({{ log.product.sku if log.product else '' }})</td>
+                    <td>
+                        <strong style="color: {% if log.quantity_change > 0 %}var(--accent-emerald){% elif log.quantity_change < 0 %}var(--accent-rose){% else %}var(--text-muted){% endif %};">
+                            {% if log.quantity_change > 0 %}+{% endif %}{{ log.quantity_change }}
+                        </strong>
+                    </td>
+                    <td>{{ log.quantity_before }} &rarr; <strong>{{ log.quantity_after }}</strong></td>
+                    <td>{{ log.creator.name if log.creator else 'System' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

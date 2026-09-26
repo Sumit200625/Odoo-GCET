@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — AI Intelligence Engine Overview{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">AI Intelligence Engine Overview</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Integrated multi-model forecasting, risk analysis, dynamic safety stock, and ABC/XYZ SKU matrix.</p>
+</div>
+
+<!-- System Health & Matrix Row -->
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <div class="section-card">
+        <div class="section-title">
+            <span><i class="fa-solid fa-heart-pulse" style="color: var(--accent-emerald); margin-right: 0.5rem;"></i> System Health Score</span>
+        </div>
+        <div style="text-align: center; padding: 1.5rem 0;">
+            <div style="font-size: 3.5rem; font-weight: 900; font-family: 'Outfit', sans-serif; color: var(--accent-emerald);">
+                {{ health.overall_score }}%
+            </div>
+            <span class="badge badge-healthy" style="font-size: 0.9rem; padding: 6px 16px;">{{ health.category }}</span>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 1rem;">{{ health.explanation }}</p>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-title">
+            <span><i class="fa-solid fa-table-cells" style="color: var(--accent-cyan); margin-right: 0.5rem;"></i> 9-Box ABC/XYZ SKU Matrix</span>
+        </div>
+        <div class="table-responsive">
+            <table class="stock-table">
+                <thead>
+                    <tr>
+                        <th>SKU Code</th>
+                        <th>Product Name</th>
+                        <th>Matrix Tag</th>
+                        <th>Annual Value</th>
+                        <th>CV Score</th>
+                        <th>Cycle Count Freq</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in classified %}
+                    <tr>
+                        <td><code>{{ c.sku }}</code></td>
+                        <td><strong>{{ c.name }}</strong></td>
+                        <td><span class="badge badge-info">{{ c.matrix_code }}</span> ({{ c.velocity_class }})</td>
+                        <td>${{ "{:,.2f}".format(c.annual_value) }}</td>
+                        <td>{{ c.cv_score }}</td>
+                        <td><span class="badge badge-healthy">{{ c.cycle_count_frequency }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

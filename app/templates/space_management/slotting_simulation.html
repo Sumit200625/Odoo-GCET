@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — Before & After Smart Slotting Simulation{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">Smart Slotting Optimization Simulation</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Simulates fast-moving SKU relocation closer to dispatch and calculates travel distance and picking time savings.</p>
+</div>
+
+<div class="grid-container">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Overall Picking Time Savings</span>
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald);"><i class="fa-solid fa-stopwatch"></i></div>
+        </div>
+        <div class="kpi-val" style="color: var(--accent-emerald);">{{ simulation.overall_picking_time_savings_pct }}%</div>
+        <div class="kpi-subtext">Estimated Outbound Order Speedup</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Total Relocations Recommended</span>
+            <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo);"><i class="fa-solid fa-arrows-split-up-and-left"></i></div>
+        </div>
+        <div class="kpi-val">{{ simulation.total_relocations_recommended }} SKUs</div>
+        <div class="kpi-subtext">Internal Location Transfers</div>
+    </div>
+</div>
+
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-arrows-turn-to-dots" style="color: var(--accent-cyan); margin-right: 0.5rem;"></i> Before & After Location Relocation Simulation Table</span>
+    </div>
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>SKU Code</th>
+                    <th>Product Name</th>
+                    <th>Current Location (Before)</th>
+                    <th>Current Dist (m)</th>
+                    <th>Recommended Location (After)</th>
+                    <th>New Dist (m)</th>
+                    <th>Distance Saved</th>
+                    <th>Time Savings %</th>
+                    <th>Rationale</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in simulation.relocation_details %}
+                <tr>
+                    <td><code>{{ d.sku }}</code></td>
+                    <td><strong>{{ d.name }}</strong></td>
+                    <td>{{ d.current_location }}</td>
+                    <td>{{ d.current_distance_m }}m</td>
+                    <td><strong style="color: var(--accent-cyan);">{{ d.recommended_location }}</strong></td>
+                    <td>{{ d.recommended_distance_m }}m</td>
+                    <td><strong style="color: var(--accent-emerald);">-{{ d.travel_distance_saved_m }}m</strong></td>
+                    <td><span class="badge badge-healthy">{{ d.estimated_time_savings_pct }}%</span></td>
+                    <td style="font-size: 0.8rem; color: var(--text-secondary);">{{ d.rationale }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-muted);">Current slotting layout is already fully optimized! No relocations required.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

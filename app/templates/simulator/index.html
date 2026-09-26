@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — Interactive What-If Scenario Simulator{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">Interactive What-If Scenario Simulator</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Simulate non-destructive demand surges, supplier lead-time delays, and safety stock policy adjustments without altering live data.</p>
+</div>
+
+<!-- Simulation Control Parameters Form -->
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-sliders" style="color: var(--accent-indigo); margin-right: 0.5rem;"></i> Simulation Parameter Controls</span>
+    </div>
+    <form method="POST" action="{{ url_for('simulator.index') }}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; align-items: flex-end;">
+        <div>
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Demand Surge Increase (+%)</label>
+            <input type="number" name="demand_increase_pct" value="{{ simulation.summary.demand_increase_pct }}" step="5" min="0" max="200" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: #fff; padding: 0.6rem 1rem; border-radius: var(--radius-sm); font-size: 0.9rem;">
+        </div>
+
+        <div>
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Supplier Lead-Time Delay (+Days)</label>
+            <input type="number" name="lead_time_delay_days" value="{{ simulation.summary.lead_time_delay_days }}" step="1" min="0" max="30" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: #fff; padding: 0.6rem 1rem; border-radius: var(--radius-sm); font-size: 0.9rem;">
+        </div>
+
+        <div>
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Safety Stock Multiplier</label>
+            <select name="safety_stock_multiplier" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: #fff; padding: 0.6rem 1rem; border-radius: var(--radius-sm); font-size: 0.9rem;">
+                <option value="1.0" {% if simulation.summary.safety_stock_multiplier == 1.0 %}selected{% endif %}>1.0x (Standard Policy)</option>
+                <option value="1.25" {% if simulation.summary.safety_stock_multiplier == 1.25 %}selected{% endif %}>1.25x (+25% Buffer)</option>
+                <option value="1.5" {% if simulation.summary.safety_stock_multiplier == 1.5 %}selected{% endif %}>1.5x (+50% Buffer)</option>
+                <option value="0.8" {% if simulation.summary.safety_stock_multiplier == 0.8 %}selected{% endif %}>0.8x (-20% Lean)</option>
+            </select>
+        </div>
+
+        <div>
+            <button type="submit" class="btn-primary" style="width: 100%; padding: 0.65rem 1rem; text-align: center;"><i class="fa-solid fa-play"></i> Run Scenario Simulation</button>
+        </div>
+    </form>
+</div>
+
+<!-- Simulation Results Summary KPI Cards -->
+<div class="grid-container">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Simulated Service Level</span>
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald);"><i class="fa-solid fa-gauge-high"></i></div>
+        </div>
+        <div class="kpi-val" style="color: {% if simulation.summary.estimated_service_level_pct >= 85 %}var(--accent-emerald){% else %}var(--accent-rose){% endif %};">
+            {{ simulation.summary.estimated_service_level_pct }}%
+        </div>
+        <div class="kpi-subtext">Estimated Order Fulfillment Rate</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Simulated Stockout Risks</span>
+            <div class="kpi-icon" style="background: rgba(244, 63, 94, 0.15); color: var(--accent-rose);"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        </div>
+        <div class="kpi-val" style="color: var(--accent-rose);">{{ simulation.summary.total_stockout_risks }} SKUs</div>
+        <div class="kpi-subtext">Items facing inventory depletion</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Simulated Overstock Risks</span>
+            <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-amber);"><i class="fa-solid fa-box-archive"></i></div>
+        </div>
+        <div class="kpi-val">{{ simulation.summary.total_overstock_risks }} SKUs</div>
+        <div class="kpi-subtext">Excess capital trapped</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Financial Exposure Risk</span>
+            <div class="kpi-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan);"><i class="fa-solid fa-dollar-sign"></i></div>
+        </div>
+        <div class="kpi-val">${{ "{:,.2f}".format(simulation.summary.total_financial_exposure) }}</div>
+        <div class="kpi-subtext">Total Estimated Financial Impact</div>
+    </div>
+</div>
+
+<!-- Detailed SKU Simulation Breakdown -->
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-list-check" style="color: var(--accent-indigo); margin-right: 0.5rem;"></i> Detailed SKU Simulation Results</span>
+    </div>
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Product Name</th>
+                    <th>Current Stock</th>
+                    <th>Simulated Daily Outflow</th>
+                    <th>Simulated Lead Time</th>
+                    <th>Simulated ROP</th>
+                    <th>Simulated Risk Status</th>
+                    <th>Financial Impact</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in simulation.details %}
+                <tr>
+                    <td><code>{{ item.sku }}</code></td>
+                    <td><strong>{{ item.name }}</strong></td>
+                    <td>{{ item.current_stock }}</td>
+                    <td>{{ item.sim_daily_rate }}/day</td>
+                    <td>{{ item.sim_lead_time }} days</td>
+                    <td>{{ item.sim_reorder_point }}</td>
+                    <td>
+                        <span class="badge {% if 'STOCKOUT' in item.sim_risk %}badge-critical{% elif 'OVERSTOCK' in item.sim_risk %}badge-high{% else %}badge-healthy{% endif %}">
+                            {{ item.sim_risk }}
+                        </span>
+                    </td>
+                    <td>${{ "{:,.2f}".format(item.financial_risk) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

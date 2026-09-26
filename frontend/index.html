@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockSense — AI Decoupled Inventory Intelligence Platform</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 & Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Custom Glassmorphism Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body id="appBody">
+    <div class="spa-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="spa-sidebar">
+            <div class="brand-header">
+                <i class="bi bi-boxes text-primary fs-3"></i>
+                <div class="brand-title">Stock<span>Sense</span> <small class="badge bg-primary fs-6 py-0 px-1">AI 2.0 SPA</small></div>
+            </div>
+
+            <!-- Active Domain Badge -->
+            <div class="px-2 mb-3">
+                <div class="d-flex align-items-center justify-content-between p-2 rounded bg-dark border border-secondary text-white small">
+                    <span>Domain: <strong id="activeDomainLabel" class="text-warning">Warehouse</strong></span>
+                    <button class="btn btn-xs btn-outline-warning py-0 px-1" onclick="openDomainModal()" title="Switch Domain">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav>
+                <div class="text-uppercase text-muted small fw-bold mb-2 px-2">INTELLIGENCE DOMAINS</div>
+                <a class="nav-link-item active" onclick="switchView('warehouse')" id="nav-warehouse">
+                    <i class="bi bi-building"></i> Warehouse Intelligence
+                </a>
+                <a class="nav-link-item" onclick="switchView('grocery')" id="nav-grocery">
+                    <i class="bi bi-shop"></i> Grocery Retail Intelligence
+                </a>
+
+                <div class="text-uppercase text-muted small fw-bold mt-4 mb-2 px-2">CORE AI ENGINES</div>
+                <a class="nav-link-item" onclick="switchView('scan')" id="nav-scan">
+                    <i class="bi bi-qr-code-scan"></i> Scan-to-Intelligence
+                </a>
+                <a class="nav-link-item" onclick="switchView('festivals')" id="nav-festivals">
+                    <i class="bi bi-calendar-event"></i> Festival Planning (11-Step)
+                </a>
+                <a class="nav-link-item" onclick="switchView('pricing')" id="nav-pricing">
+                    <i class="bi bi-tag"></i> Dynamic Price Studio
+                </a>
+                <a class="nav-link-item" onclick="switchView('simulator')" id="nav-simulator">
+                    <i class="bi bi-sliders"></i> What-If Simulator
+                </a>
+
+                <div class="text-uppercase text-muted small fw-bold mt-4 mb-2 px-2">OPERATIONS</div>
+                <a class="nav-link-item" onclick="switchView('pos')" id="nav-pos">
+                    <i class="bi bi-cart3"></i> POS Checkout Engine
+                </a>
+                <a class="nav-link-item" onclick="switchView('waste')" id="nav-waste">
+                    <i class="bi bi-trash3"></i> Expiry & Waste Disposal
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="spa-main">
+            <!-- Topbar -->
+            <header class="spa-topbar">
+                <div class="topbar-search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="globalSearchInput" placeholder="Search SKU, barcode... (Press Ctrl+K for AI Assistant)">
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-sm btn-outline-secondary text-white border-0" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Light/Dark Theme">
+                        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+                    </button>
+
+                    <div class="d-flex align-items-center gap-2 px-3 py-1 bg-dark rounded border border-secondary">
+                        <span class="small text-muted">System Health:</span>
+                        <span class="badge bg-success fs-6" id="globalHealthBadge"><i class="bi bi-heart-pulse-fill me-1"></i> 94%</span>
+                    </div>
+
+                    <button class="btn btn-sm btn-warning fw-bold" onclick="openAssistantModal()">
+                        <i class="bi bi-cpu me-1"></i> AI Assistant <kbd class="bg-dark text-white">Ctrl+K</kbd>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dynamic View Container -->
+            <div class="spa-content" id="mainViewContainer">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <p class="text-muted">Loading StockSense Decoupled SPA Engine...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Domain Selector Modal -->
+    <div class="modal fade" id="domainModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg bg-dark text-white">
+                <div class="modal-header border-secondary py-3">
+                    <h5 class="modal-title fw-bold text-warning"><i class="bi bi-grid-fill me-2"></i>Select Operating Environment</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="glass-card p-4 text-center cursor-pointer hover-glow" onclick="selectDomain('Warehouse')">
+                                <i class="bi bi-building text-primary display-4 mb-3 d-block"></i>
+                                <h4 class="fw-bold text-white mb-2">Warehouse Intelligence</h4>
+                                <p class="small text-muted mb-0">Floor capacity, visual slotting heatmaps, directed put-away, and supplier fulfillment.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="glass-card p-4 text-center cursor-pointer hover-glow" onclick="selectDomain('Grocery')">
+                                <i class="bi bi-shop text-success display-4 mb-3 d-block"></i>
+                                <h4 class="fw-bold text-white mb-2">Grocery Retail Intelligence</h4>
+                                <p class="small text-muted mb-0">Perishable shelf availability, POS checkout sales engine, FEFO waste, and festival planning.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Assistant Modal -->
+    <div class="modal fade" id="assistantModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg bg-dark text-white">
+                <div class="modal-header border-secondary py-3">
+                    <h5 class="modal-title fw-bold text-warning"><i class="bi bi-cpu me-2"></i>StockSense AI Natural-Language Assistant</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="input-group input-group-lg mb-3">
+                        <input type="text" id="assistantQueryInput" class="form-control bg-secondary text-white border-0" 
+                               placeholder="Ask e.g. 'Which products may stock out this week?' or 'Show grocery items expiring within 15 days'...">
+                        <button class="btn btn-warning fw-bold px-4" type="button" onclick="submitAssistantQuery()"><i class="bi bi-send me-1"></i> Ask AI</button>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mb-4">
+                        <span class="badge bg-secondary cursor-pointer" onclick="fillQuery(this.innerText)">Which products may stock out this week?</span>
+                        <span class="badge bg-secondary cursor-pointer" onclick="fillQuery(this.innerText)">Show grocery products expiring within 15 days</span>
+                        <span class="badge bg-secondary cursor-pointer" onclick="fillQuery(this.innerText)">What should I reorder before Diwali?</span>
+                        <span class="badge bg-secondary cursor-pointer" onclick="fillQuery(this.innerText)">Which supplier has best delivery reliability?</span>
+                    </div>
+
+                    <div id="assistantResponseContainer" class="p-3 bg-black bg-opacity-50 rounded min-h-150 text-white">
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-chat-left-dots fs-1 d-block mb-2 text-warning opacity-50"></i>
+                            Type a question above to receive explainable insights directly linked to database records.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Decoupled API Client & SPA Engine -->
+    <script src="js/api_client.js"></script>
+    <script src="js/app_spa.js"></script>
+</body>
+</html>

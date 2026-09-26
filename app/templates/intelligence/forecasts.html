@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — AI Demand Forecasting & Model Selection{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">AI Demand Forecasting & Model Evaluation</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Multi-model selection comparing Moving Average, Exponential Smoothing, ARIMA-proxy, and Random Forest Regressor.</p>
+</div>
+
+<!-- SKU Selector Bar -->
+<div class="section-card" style="padding: 1rem 1.5rem;">
+    <form method="GET" action="{{ url_for('intelligence.forecasts') }}" style="display: flex; align-items: center; gap: 1rem;">
+        <label style="font-weight: 600; font-size: 0.9rem;"><i class="fa-solid fa-box" style="color: var(--accent-indigo);"></i> Select Target SKU:</label>
+        <select name="product_id" onchange="this.form.submit()" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.9rem; min-width: 300px;">
+            {% for p in products %}
+            <option value="{{ p.id }}" {% if p.id == selected_sku_id %}selected{% endif %}>{{ p.name }} ({{ p.sku }})</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+{% if forecast %}
+<!-- Forecast Summary Cards -->
+<div class="grid-container">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Predicted 30-Day Demand</span>
+            <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo);"><i class="fa-solid fa-chart-line"></i></div>
+        </div>
+        <div class="kpi-val">{{ forecast.forecast_30d }} {{ forecast.product.unit }}</div>
+        <div class="kpi-subtext">Burn Rate: <strong>{{ forecast.daily_rate }} {{ forecast.product.unit }}/day</strong></div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Selected AI Algorithm</span>
+            <div class="kpi-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan);"><i class="fa-solid fa-brain"></i></div>
+        </div>
+        <div class="kpi-val" style="font-size: 1.25rem;">{{ forecast.selected_model }}</div>
+        <div class="kpi-subtext">Model Accuracy: <strong>{{ forecast.accuracy_pct }}%</strong></div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Prediction Confidence Bounds</span>
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald);"><i class="fa-solid fa-arrows-left-right"></i></div>
+        </div>
+        <div class="kpi-val" style="font-size: 1.25rem;">{{ forecast.lower_range }} &ndash; {{ forecast.upper_range }}</div>
+        <div class="kpi-subtext">Confidence Level: <strong>{{ forecast.confidence_pct }}%</strong></div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span>Error Metrics (MAE / RMSE)</span>
+            <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-amber);"><i class="fa-solid fa-calculator"></i></div>
+        </div>
+        <div class="kpi-val" style="font-size: 1.25rem;">MAE: {{ forecast.mae }} | RMSE: {{ forecast.rmse }}</div>
+        <div class="kpi-subtext">MAPE: <strong>{{ forecast.mape }}%</strong> | Bias: <strong>{{ forecast.bias }}</strong></div>
+    </div>
+</div>
+
+<!-- Forecast Curve Chart -->
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-chart-area" style="color: var(--accent-indigo); margin-right: 0.5rem;"></i> 30-Day Demand Projection Curve & Prediction Interval</span>
+    </div>
+    <div style="height: 320px; position: relative;">
+        <canvas id="skuForecastChart"></canvas>
+    </div>
+</div>
+
+<!-- Influencing Factors & Signals -->
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-satellite-dish" style="color: var(--accent-cyan); margin-right: 0.5rem;"></i> Key Influencing Demand Signals & Features</span>
+    </div>
+    <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.6rem;">
+        {% for factor in forecast.influencing_factors %}
+        <li style="background: rgba(255,255,255,0.03); padding: 0.6rem 1rem; border-radius: var(--radius-sm); border-left: 3px solid var(--accent-indigo); font-size: 0.88rem;">
+            <i class="fa-solid fa-check" style="color: var(--accent-emerald); margin-right: 0.5rem;"></i> {{ factor }}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if forecast %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var ctx = document.getElementById('skuForecastChart').getContext('2d');
+    var baseVal = {{ forecast.forecast_30d / 30.0 }};
+    
+    var labels = [];
+    var predData = [];
+    var upperData = [];
+    var lowerData = [];
+    
+    for (var i = 1; i <= 30; i++) {
+        labels.push('Day ' + i);
+        var val = baseVal * (1 + (Math.sin(i / 3) * 0.15));
+        predData.push(val.toFixed(1));
+        upperData.push((val * 1.15).toFixed(1));
+        lowerData.push((val * 0.85).toFixed(1));
+    }
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Predicted Demand',
+                    data: predData,
+                    borderColor: '#6366f1',
+                    borderWidth: 3,
+                    tension: 0.3
+                },
+                {
+                    label: 'Upper Bound (95%)',
+                    data: upperData,
+                    borderColor: 'rgba(6, 182, 212, 0.4)',
+                    borderDash: [4, 4],
+                    tension: 0.3
+                },
+                {
+                    label: 'Lower Bound (95%)',
+                    data: lowerData,
+                    borderColor: 'rgba(244, 63, 94, 0.4)',
+                    borderDash: [4, 4],
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#9ca3af' } } },
+            scales: {
+                x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

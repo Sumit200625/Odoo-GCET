@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — Smart Reorder Recommendation Queue{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">Explainable Replenishment & Reorder Queue</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Human-in-the-loop approval workflow: Generated &rarr; Reviewed &rarr; Approved &rarr; Executed &rarr; Received &rarr; Closed.</p>
+</div>
+
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-arrows-rotate" style="color: var(--accent-indigo); margin-right: 0.5rem;"></i> Smart Reorder Recommendation Queue</span>
+    </div>
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>Rec Code</th>
+                    <th>SKU & Product</th>
+                    <th>Current Stock</th>
+                    <th>Safety Stock</th>
+                    <th>Reorder Point</th>
+                    <th>Recommended Action</th>
+                    <th>Suggested Qty</th>
+                    <th>Financial Impact</th>
+                    <th>Status</th>
+                    <th>Human Approval</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in recs %}
+                <tr>
+                    <td><code>{{ r.rec_code }}</code></td>
+                    <td><strong>{{ r.product.name }}</strong> ({{ r.product.sku }})</td>
+                    <td>{{ r.current_stock }} {{ r.product.unit }}</td>
+                    <td>{{ r.safety_stock }} {{ r.product.unit }}</td>
+                    <td>{{ r.reorder_point }} {{ r.product.unit }}</td>
+                    <td><span class="badge badge-info">{{ r.recommended_action }}</span></td>
+                    <td><strong style="color: var(--accent-emerald);">{{ r.recommended_quantity }} {{ r.product.unit }}</strong></td>
+                    <td>${{ "{:,.2f}".format(r.financial_impact) }}</td>
+                    <td>
+                        <span class="badge {% if r.approval_status == 'Executed' %}badge-healthy{% elif r.approval_status == 'Rejected' %}badge-critical{% else %}badge-high{% endif %}">
+                            {{ r.approval_status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if r.approval_status in ['Generated', 'Reviewed'] %}
+                        <div style="display: flex; gap: 0.4rem;">
+                            <form action="{{ url_for('intelligence.approve_recommendation', rec_id=r.id) }}" method="POST">
+                                <button type="submit" class="btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Approve & PO</button>
+                            </form>
+                            <form action="{{ url_for('intelligence.reject_recommendation', rec_id=r.id) }}" method="POST">
+                                <input type="hidden" name="reason" value="Manager override: Stock level sufficient">
+                                <button type="submit" class="btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; color: var(--accent-rose);">Reject</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Completed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" style="text-align: center; color: var(--text-muted);">No active reorder recommendations pending review.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

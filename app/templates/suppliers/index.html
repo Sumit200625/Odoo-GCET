@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — Supplier Intelligence & Scorecard{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">Supplier Intelligence Scorecards & PO Comparison</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Track supplier metrics, lead-time variance, on-time delivery rates, and run multi-objective supplier selection.</p>
+</div>
+
+<!-- Supplier Performance Matrix Table -->
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-award" style="color: var(--accent-indigo); margin-right: 0.5rem;"></i> Supplier Performance Matrix & Classifications</span>
+    </div>
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>Supplier Code</th>
+                    <th>Supplier Name</th>
+                    <th>Lead Time</th>
+                    <th>Lead Time Variance</th>
+                    <th>On-Time Rate</th>
+                    <th>Fill Rate</th>
+                    <th>Quality Rate</th>
+                    <th>Defect Rate</th>
+                    <th>Scorecard Score</th>
+                    <th>Classification</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in suppliers %}
+                <tr>
+                    <td><code>{{ s.code }}</code></td>
+                    <td><strong>{{ s.name }}</strong></td>
+                    <td>{{ s.lead_time_days }} days</td>
+                    <td>&plusmn;{{ s.lead_time_variance }} days</td>
+                    <td>{{ s.on_time_rate }}%</td>
+                    <td>{{ s.fill_rate_pct }}%</td>
+                    <td>{{ s.quality_rate }}%</td>
+                    <td>{{ s.defect_rate_pct }}%</td>
+                    <td>
+                        <strong style="font-size: 1.1rem; color: {% if s.supplier_score >= 90 %}var(--accent-emerald){% elif s.supplier_score >= 80 %}var(--accent-cyan){% else %}var(--accent-amber){% endif %};">
+                            {{ s.supplier_score }}/100
+                        </strong>
+                    </td>
+                    <td>
+                        <span class="badge {% if s.classification == 'Strategic' %}badge-healthy{% elif s.classification == 'Reliable' %}badge-info{% else %}badge-high{% endif %}">
+                            {{ s.classification }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Multi-Objective Supplier Selection Tool -->
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-scale-balanced" style="color: var(--accent-cyan); margin-right: 0.5rem;"></i> Multi-Objective Supplier Selection Tool</span>
+    </div>
+
+    <form method="GET" action="{{ url_for('suppliers.index') }}" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Target SKU</label>
+            <select name="product_id" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem 1rem; border-radius: var(--radius-sm);">
+                {% for p in products %}
+                <option value="{{ p.id }}" {% if p.id == selected_prod_id %}selected{% endif %}>{{ p.name }} ({{ p.sku }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Optimization Objective</label>
+            <select name="objective" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem 1rem; border-radius: var(--radius-sm);">
+                <option value="Balanced" {% if objective == 'Balanced' %}selected{% endif %}>Balanced Option (Recommended)</option>
+                <option value="Lowest Cost" {% if objective == 'Lowest Cost' %}selected{% endif %}>Lowest Unit Cost</option>
+                <option value="Fastest Delivery" {% if objective == 'Fastest Delivery' %}selected{% endif %}>Fastest Lead Time</option>
+                <option value="Highest Reliability" {% if objective == 'Highest Reliability' %}selected{% endif %}>Highest Reliability Score</option>
+            </select>
+        </div>
+
+        <div style="align-self: flex-end;">
+            <button type="submit" class="btn-primary"><i class="fa-solid fa-filter"></i> Evaluate Suppliers</button>
+        </div>
+    </form>
+
+    {% if rankings %}
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Supplier Name</th>
+                    <th>Objective Score</th>
+                    <th>Lead Time</th>
+                    <th>Reliability Score</th>
+                    <th>MOQ</th>
+                    <th>Classification</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rankings %}
+                <tr>
+                    <td><strong>#{{ loop.index }}</strong></td>
+                    <td><strong>{{ r.supplier.name }}</strong> ({{ r.supplier.code }})</td>
+                    <td><strong style="color: var(--accent-emerald);">{{ r.objective_score }} pts</strong></td>
+                    <td>{{ r.lead_time_days }} days</td>
+                    <td>{{ r.reliability_score }}%</td>
+                    <td>{{ r.moq }} units</td>
+                    <td><span class="badge badge-info">{{ r.classification }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Scan-to-Intelligence Center - StockSense{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-qr-code-scan text-primary me-2"></i>Scan-to-Intelligence Center</h2>
+            <p class="text-muted mb-0">Multi-format barcode & PLU scanner with instant 5-section Product Intelligence parsing.</p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('scan.index', mode='Lookup') }}" class="btn btn-sm {{ 'btn-primary' if mode == 'Lookup' else 'btn-outline-primary' }}">
+                <i class="bi bi-search me-1"></i> 1. Product Lookup
+            </a>
+            <a href="{{ url_for('scan.index', mode='Transaction') }}" class="btn btn-sm {{ 'btn-primary' if mode == 'Transaction' else 'btn-outline-primary' }}">
+                <i class="bi bi-cart-check me-1"></i> 2. Transaction
+            </a>
+            <a href="{{ url_for('scan.index', mode='Intelligence') }}" class="btn btn-sm {{ 'btn-primary' if mode == 'Intelligence' else 'btn-outline-primary' }}">
+                <i class="bi bi-cpu me-1"></i> 3. Intelligence Mode
+            </a>
+        </div>
+    </div>
+
+    <!-- Scanner Controls Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form method="GET" action="{{ url_for('scan.index') }}" id="scanForm">
+                <input type="hidden" name="mode" value="{{ mode }}">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-7">
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-barcode text-primary"></i></span>
+                            <input type="text" name="barcode" id="barcodeInput" class="form-control border-start-0 fs-5" 
+                                   placeholder="Scan barcode, SKU, EAN-13, QR, or PLU code..." value="{{ scan_query or '' }}" autofocus required>
+                            <button class="btn btn-primary px-4 fw-bold" type="submit">
+                                <i class="bi bi-lightning-charge me-1"></i> Run Scan
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-5 d-flex gap-2">
+                        <button type="button" class="btn btn-outline-dark btn-lg flex-grow-1" id="btnToggleCamera">
+                            <i class="bi bi-camera me-2"></i> Open Camera Scanner
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-lg" onclick="document.getElementById('barcodeInput').value='EAN-890123456701'; document.getElementById('scanForm').submit();" title="Demo Scan">
+                            <i class="bi bi-magic me-1"></i> Demo Scan
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Video Camera Stream Container (Hidden by default) -->
+            <div id="cameraContainer" class="mt-3 text-center d-none">
+                <div class="p-3 bg-dark rounded text-white display-inline-block position-relative style-camera-box">
+                    <video id="cameraVideo" style="max-width: 100%; max-height: 300px;" autoplay playsinline></video>
+                    <div class="scan-line"></div>
+                    <p class="small text-muted mt-2 mb-0"><i class="bi bi-info-circle me-1"></i>Position barcode in center of frame</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if panel %}
+    <!-- 5-SECTION PRODUCT INTELLIGENCE PANEL -->
+    <div class="card border-0 shadow-sm border-start border-primary border-4 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <div>
+                <span class="badge bg-primary me-2">Scan Mode: {{ mode }}</span>
+                <h4 class="d-inline fw-bold mb-0 text-dark">{{ panel.product_identity.name }}</h4>
+            </div>
+            <div>
+                <span class="badge bg-dark fs-6 px-3 py-2"><i class="bi bi-qr-code me-1"></i> {{ panel.product_identity.barcode }}</span>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-4">
+                <!-- Section 1: Product Identity -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="p-3 bg-light rounded h-100">
+                        <h6 class="text-uppercase fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>1. Product Identity</h6>
+                        <ul class="list-unstyled mb-0 small">
+                            <li class="mb-2"><strong>SKU:</strong> {{ panel.product_identity.sku }}</li>
+                            <li class="mb-2"><strong>Brand:</strong> {{ panel.product_identity.brand }}</li>
+                            <li class="mb-2"><strong>Category:</strong> {{ panel.product_identity.category }}</li>
+                            <li class="mb-2"><strong>Format:</strong> <span class="badge bg-secondary">{{ panel.product_identity.format }}</span></li>
+                            <li><strong>Freshness Standard:</strong> {{ panel.product_identity.freshness_standard }}</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Section 2: Commercial Information -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="p-3 bg-light rounded h-100">
+                        <h6 class="text-uppercase fw-bold text-success mb-3"><i class="bi bi-currency-dollar me-2"></i>2. Commercial Info</h6>
+                        <ul class="list-unstyled mb-0 small">
+                            <li class="mb-2"><strong>Current Price:</strong> <span class="fs-5 fw-bold text-success">${{ "%.2f"|format(panel.commercial_info.current_price) }}</span></li>
+                            <li class="mb-2"><strong>MRP:</strong> <s>${{ "%.2f"|format(panel.commercial_info.mrp) }}</s></li>
+                            <li class="mb-2"><strong>Active Promo:</strong> <span class="badge bg-warning text-dark">{{ panel.commercial_info.active_promotion }}</span></li>
+                            <li><strong>Price Type:</strong> {{ panel.commercial_info.price_type }}</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Section 3: Inventory Position -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="p-3 bg-light rounded h-100">
+                        <h6 class="text-uppercase fw-bold text-warning mb-3"><i class="bi bi-boxes me-2"></i>3. Inventory Position</h6>
+                        <ul class="list-unstyled mb-0 small">
+                            <li class="mb-2"><strong>Warehouse Stock:</strong> {{ panel.inventory_position.warehouse_stock }} units</li>
+                            <li class="mb-2"><strong>Store Shelf Stock:</strong> {{ panel.inventory_position.shelf_stock }} / {{ panel.inventory_position.shelf_capacity }}</li>
+                            <li class="mb-2"><strong>Backroom Stock:</strong> {{ panel.inventory_position.backroom_stock }} units</li>
+                            <li class="mb-2"><strong>Expiry Date:</strong> <span class="text-danger fw-bold">{{ panel.inventory_position.expiry_date }}</span></li>
+                            <li><strong>FEFO Priority:</strong> <span class="badge bg-dark">{{ panel.inventory_position.fefo_priority }}</span></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Section 4: AI Intelligence -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="p-3 bg-dark text-white rounded h-100">
+                        <h6 class="text-uppercase fw-bold text-warning mb-3"><i class="bi bi-cpu me-2"></i>4. AI Intelligence</h6>
+                        <ul class="list-unstyled mb-0 small">
+                            <li class="mb-2"><strong>Health Score:</strong> <span class="badge bg-success fs-6">{{ panel.ai_intelligence.health_score }}/100</span></li>
+                            <li class="mb-2"><strong>Stockout Risk:</strong> <span class="badge bg-danger">{{ panel.ai_intelligence.stockout_risk }}</span></li>
+                            <li class="mb-2"><strong>30-Day Forecast:</strong> {{ panel.ai_intelligence.forecasted_demand }} units</li>
+                            <li class="mb-2"><strong>Safety Stock:</strong> {{ panel.ai_intelligence.safety_stock }} units</li>
+                            <li><strong>Rec. Reorder:</strong> <span class="text-warning fw-bold">{{ panel.ai_intelligence.recommended_reorder }} units</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5: Recommended Actions Toolbar -->
+            <div class="mt-4 pt-3 border-top">
+                <h6 class="text-uppercase fw-bold text-dark mb-3"><i class="bi bi-lightning-auto me-2 text-primary"></i>5. Recommended Quick Actions</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for act in panel.recommended_actions %}
+                    <a href="{{ act.route }}" class="btn btn-outline-primary btn-sm fw-bold">
+                        <i class="bi bi-play-circle me-1"></i> {{ act.label }}
+                    </a>
+                    {% endfor %}
+                    <a href="{{ url_for('pricing.index') }}" class="btn btn-outline-warning btn-sm fw-bold">
+                        <i class="bi bi-tag me-1"></i> Apply Dynamic Markdown
+                    </a>
+                    <a href="{{ url_for('simulator.workspace') }}" class="btn btn-outline-success btn-sm fw-bold">
+                        <i class="bi bi-sliders me-1"></i> What-If Simulation
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% elif scan_query %}
+    <div class="alert alert-warning shadow-sm">
+        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+        Product barcode or SKU <strong>"{{ scan_query }}"</strong> not found in database. Please verify barcode input.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

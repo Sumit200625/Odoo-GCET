@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Move History & Stock Ledger — StockSense{% endblock %}
+{% block header_title %}Stock Move History & Audit Ledger{% endblock %}
+
+{% block content %}
+<!-- SMART FILTERS BAR -->
+<div class="filter-bar">
+  <form method="GET" action="{{ url_for('ledger.index') }}" style="display: flex; align-items: center; gap: 12px; width: 100%; flex-wrap: wrap;">
+    <div class="search-input-group">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" name="search" class="form-control" placeholder="Search by Ref #, Product Name or SKU..." value="{{ search }}">
+    </div>
+
+    <select name="operation_type" class="form-select" onchange="this.form.submit()">
+      <option value="">All Operation Types</option>
+      <option value="Receipt" {% if selected_op_type == 'Receipt' %}selected{% endif %}>Receipts</option>
+      <option value="Delivery" {% if selected_op_type == 'Delivery' %}selected{% endif %}>Deliveries</option>
+      <option value="Transfer" {% if selected_op_type == 'Transfer' %}selected{% endif %}>Transfers</option>
+      <option value="Adjustment" {% if selected_op_type == 'Adjustment' %}selected{% endif %}>Adjustments</option>
+    </select>
+
+    <select name="product_id" class="form-select" onchange="this.form.submit()">
+      <option value="">All Products</option>
+      {% for p in products %}
+        <option value="{{ p.id }}" {% if selected_product_id == p.id %}selected{% endif %}>{{ p.name }} ({{ p.sku }})</option>
+      {% endfor %}
+    </select>
+
+    <select name="location_id" class="form-select" onchange="this.form.submit()">
+      <option value="">All Locations</option>
+      {% for loc in locations %}
+        <option value="{{ loc.id }}" {% if selected_location_id == loc.id %}selected{% endif %}>{{ loc.full_name }}</option>
+      {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    {% if search or selected_op_type or selected_product_id or selected_location_id %}
+      <a href="{{ url_for('ledger.index') }}" class="btn btn-secondary btn-sm">Reset</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- LEDGER TABLE -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i>
+      Permanent Stock Audit Ledger Entries (Read-Only)
+    </div>
+    <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">
+      <i class="fa-solid fa-lock me-1"></i> Immutable Records
+    </span>
+  </div>
+
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date & Time</th>
+            <th>Reference</th>
+            <th>Operation</th>
+            <th>Product</th>
+            <th>Location</th>
+            <th>Qty Change</th>
+            <th>Before</th>
+            <th>After</th>
+            <th>Executed By</th>
+            <th>Reason / Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in entries %}
+          <tr>
+            <td style="font-size: 12px; color: var(--text-muted); white-space: nowrap;">
+              {{ entry.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+            </td>
+            <td><strong>{{ entry.reference }}</strong></td>
+            <td>
+              {% if 'Receipt' in entry.operation_type %}
+                <span class="badge badge-op-receipt">Receipt</span>
+              {% elif 'Delivery' in entry.operation_type %}
+                <span class="badge badge-op-delivery">Delivery</span>
+              {% elif 'Transfer' in entry.operation_type %}
+                <span class="badge badge-op-transfer">{{ entry.operation_type }}</span>
+              {% else %}
+                <span class="badge badge-op-adjustment">Adjustment</span>
+              {% endif %}
+            </td>
+            <td>
+              <strong>{{ entry.product.name }}</strong>
+              <div style="font-size: 11px; color: var(--text-muted);">SKU: {{ entry.product.sku }}</div>
+            </td>
+            <td>{{ entry.location.full_name }}</td>
+            <td>
+              {% if entry.quantity_change > 0 %}
+                <span style="color: var(--success); font-weight: 700;">+{{ entry.quantity_change }} {{ entry.product.unit }}</span>
+              {% elif entry.quantity_change < 0 %}
+                <span style="color: var(--danger); font-weight: 700;">{{ entry.quantity_change }} {{ entry.product.unit }}</span>
+              {% else %}
+                <span style="color: var(--text-muted); font-weight: 700;">0 {{ entry.product.unit }}</span>
+              {% endif %}
+            </td>
+            <td style="color: var(--text-muted);">{{ entry.quantity_before }}</td>
+            <td><strong>{{ entry.quantity_after }}</strong></td>
+            <td style="font-size: 13px;">{{ entry.creator.name }}</td>
+            <td style="font-size: 12px; color: var(--text-secondary);">{{ entry.reason or '-' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 40px;">
+              No stock movements found matching filter criteria.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

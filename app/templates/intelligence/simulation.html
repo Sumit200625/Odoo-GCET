@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}What-If Scenario Simulator — StockSense{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <div>
+    <h1 style="font-size: 24px; font-weight: 700; margin: 0;">
+      <i class="fa-solid fa-flask" style="color: #a855f7; margin-right: 8px;"></i>
+      What-If Scenario Simulator Sandbox
+    </h1>
+    <p style="color: var(--text-muted); margin: 4px 0 0 0;">Non-destructive scenario modeling for demand surges, supplier lead time delays & safety stock policies.</p>
+  </div>
+  <a href="/intelligence" class="btn btn-secondary btn-sm">
+    <i class="fa-solid fa-arrow-left"></i> Back to Intelligence
+  </a>
+</div>
+
+<!-- SCENARIO CONTROLS FORM -->
+<div class="card" style="margin-bottom: 24px; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1);">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-sliders" style="color: var(--primary);"></i> Configure Simulation Parameters
+    </div>
+  </div>
+  <div class="card-body">
+    <form method="POST" action="/intelligence/simulation" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: end;">
+      <div>
+        <label class="form-label" style="font-weight: 600;">Simulated Demand Surge (%)</label>
+        <input type="number" step="5" name="demand_increase_pct" class="form-control" value="{{ demand_increase_pct }}" placeholder="e.g. 25">
+        <small style="color: var(--text-muted); font-size: 11px;">Expected % increase in daily velocity</small>
+      </div>
+
+      <div>
+        <label class="form-label" style="font-weight: 600;">Supplier Lead Time Delay (Days)</label>
+        <input type="number" step="1" name="lead_time_delay_days" class="form-control" value="{{ lead_time_delay_days }}" placeholder="e.g. 3">
+        <small style="color: var(--text-muted); font-size: 11px;">Additional delivery lag days</small>
+      </div>
+
+      <div>
+        <label class="form-label" style="font-weight: 600;">Safety Stock Multiplier</label>
+        <select name="safety_stock_multiplier" class="form-select">
+          <option value="0.8" {% if safety_stock_multiplier == 0.8 %}selected{% endif %}>0.8x (Aggressive Capital Efficiency)</option>
+          <option value="1.0" {% if safety_stock_multiplier == 1.0 %}selected{% endif %}>1.0x (Baseline Standard Policy)</option>
+          <option value="1.2" {% if safety_stock_multiplier == 1.2 %}selected{% endif %}>1.2x (Moderate Buffer)</option>
+          <option value="1.5" {% if safety_stock_multiplier == 1.5 %}selected{% endif %}>1.5x (High Service Target 99%)</option>
+        </select>
+        <small style="color: var(--text-muted); font-size: 11px;">Dynamic safety stock scaling factor</small>
+      </div>
+
+      <div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">
+          <i class="fa-solid fa-play me-1"></i> Run Scenario Simulation
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- SIMULATION SUMMARY KPIS -->
+<div class="kpi-grid" style="margin-bottom: 24px;">
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-title">Simulated Service Level</span>
+      <div class="kpi-icon-box kpi-icon-green"><i class="fa-solid fa-heart-pulse"></i></div>
+    </div>
+    <div class="kpi-value" style="color: {% if summary.estimated_service_level >= 90 %}#10b981{% else %}#ef4444{% endif %};">
+      {{ summary.estimated_service_level }}%
+    </div>
+    <div class="kpi-subtext">Estimated order fulfilment target</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-title">Stockout Risks</span>
+      <div class="kpi-icon-box kpi-icon-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    </div>
+    <div class="kpi-value" style="color: #ef4444;">{{ summary.total_stockout_risks }}</div>
+    <div class="kpi-subtext">SKUs at risk of depletion</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-title">Overstock Risks</span>
+      <div class="kpi-icon-box kpi-icon-blue"><i class="fa-solid fa-cubes-stacked"></i></div>
+    </div>
+    <div class="kpi-value" style="color: #3b82f6;">{{ summary.total_overstock_risks }}</div>
+    <div class="kpi-subtext">Excess capital lockup</div>
+  </div>
+</div>
+
+<!-- SIMULATION DETAILS TABLE -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-table me-2" style="color: var(--primary);"></i> SKU Level Scenario Impact Analysis
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Product Name</th>
+            <th>Current Stock</th>
+            <th>Simulated Daily Burn</th>
+            <th>Simulated ROP</th>
+            <th>Simulated Reorder Qty</th>
+            <th>Scenario Risk Impact</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in details %}
+          <tr>
+            <td><code>{{ row.sku }}</code></td>
+            <td style="font-weight: 600;">{{ row.name }}</td>
+            <td>{{ row.current_stock }}</td>
+            <td>{{ row.simulated_daily_rate }} / day</td>
+            <td>{{ row.simulated_reorder_point }}</td>
+            <td style="font-weight: 700; color: #38bdf8;">{{ row.simulated_reorder_qty }}</td>
+            <td>
+              {% if 'STOCKOUT' in row.simulated_risk %}
+                <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444;">
+                  <i class="fa-solid fa-circle-exclamation me-1"></i> {{ row.simulated_risk }}
+                </span>
+              {% elif 'OVERSTOCK' in row.simulated_risk %}
+                <span class="badge" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid #3b82f6;">
+                  <i class="fa-solid fa-boxes-stacked me-1"></i> {{ row.simulated_risk }}
+                </span>
+              {% else %}
+                <span class="badge badge-done">
+                  <i class="fa-solid fa-check me-1"></i> STABLE
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

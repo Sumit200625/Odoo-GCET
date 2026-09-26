@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — Predictive Inventory Risk Matrix{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">Predictive Inventory Risk Engine</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Continuous risk prioritization across 12 categories: Stockout, Overstock, Expiry, Capacity, Supplier Delay, and Accuracy.</p>
+</div>
+
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-fire-flame-curved" style="color: var(--accent-rose); margin-right: 0.5rem;"></i> Active Predictive Risk Radar ({{ risks|length }} Events Detected)</span>
+    </div>
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>Risk Code</th>
+                    <th>Category</th>
+                    <th>Severity</th>
+                    <th>Risk Score</th>
+                    <th>Financial Impact</th>
+                    <th>Operational Impact</th>
+                    <th>Recommended Mitigation</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in risks %}
+                <tr>
+                    <td><code>{{ r.risk_code }}</code></td>
+                    <td><strong>{{ r.risk_category }}</strong></td>
+                    <td>
+                        <span class="badge {% if r.severity == 'Critical' %}badge-critical{% elif r.severity == 'High' %}badge-high{% else %}badge-info{% endif %}">
+                            {{ r.severity }}
+                        </span>
+                    </td>
+                    <td>
+                        <strong style="font-size: 1rem; color: {% if r.risk_score >= 80 %}var(--accent-rose){% elif r.risk_score >= 60 %}var(--accent-amber){% else %}var(--accent-cyan){% endif %};">
+                            {{ r.risk_score }}/100
+                        </strong>
+                    </td>
+                    <td style="color: var(--accent-rose); font-weight: 700;">${{ "{:,.2f}".format(r.financial_impact) }}</td>
+                    <td style="font-size: 0.82rem; color: var(--text-secondary);">{{ r.operational_impact }}</td>
+                    <td style="font-size: 0.82rem; color: var(--accent-emerald); font-weight: 500;">
+                        <i class="fa-solid fa-circle-check" style="margin-right: 0.3rem;"></i> {{ r.recommended_mitigation }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted);">No active critical inventory risks detected! All operations within optimal parameters.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

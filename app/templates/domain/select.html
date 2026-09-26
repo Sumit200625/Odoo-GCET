@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — Select Intelligence Operating Domain{% endblock %}
+
+{% block content %}
+<div class="domain-select-container">
+    <div class="system-badge" style="display: inline-block; margin-bottom: 1rem;">Operating Environment Selection</div>
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem;">Select StockSense Intelligence Domain</h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">Choose your active operating environment. You can switch between environments at any time from the topbar navigation.</p>
+
+    <div class="domain-cards-grid">
+        <!-- Warehouse Intelligence Domain Card -->
+        <a href="{{ url_for('domain.switch_domain', domain_name='warehouse') }}" class="domain-card">
+            <div>
+                <div class="domain-card-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo);">
+                    <i class="fa-solid fa-warehouse"></i>
+                </div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-indigo); letter-spacing: 0.05em; text-transform: uppercase;">Environment 1</div>
+                <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 800; margin-top: 0.35rem; margin-bottom: 0.75rem;">Warehouse Intelligence</h2>
+                <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5; margin-bottom: 1.5rem;">
+                    Storage layout management, location capacity heatmaps, directed put-away execution, FEFO/FIFO picking path optimization, and supplier performance scorecards.
+                </p>
+                <div style="border-t: 1px solid var(--border-color); pt-3; margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.8rem;">
+                    <div><span style="color: var(--text-muted);">Storage Util:</span> <strong>{{ warehouse_data.space_analytics.volume_utilization_pct }}%</strong></div>
+                    <div><span style="color: var(--text-muted);">Putaway Tasks:</span> <strong>{{ warehouse_data.pending_putaway_count }}</strong></div>
+                    <div><span style="color: var(--text-muted);">Wave Pick Tasks:</span> <strong>{{ warehouse_data.pending_picking_count }}</strong></div>
+                    <div><span style="color: var(--text-muted);">Blocked Locations:</span> <strong>{{ warehouse_data.blocked_locations_count }}</strong></div>
+                </div>
+            </div>
+            <div style="margin-top: 2rem; text-align: right; color: var(--accent-indigo); font-weight: 700; font-size: 0.9rem;">
+                Launch Warehouse Workspace <i class="fa-solid fa-arrow-right" style="margin-left: 0.3rem;"></i>
+            </div>
+        </a>
+
+        <!-- Grocery Retail Intelligence Domain Card -->
+        <a href="{{ url_for('domain.switch_domain', domain_name='grocery') }}" class="domain-card">
+            <div>
+                <div class="domain-card-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan);">
+                    <i class="fa-solid fa-store"></i>
+                </div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-cyan); letter-spacing: 0.05em; text-transform: uppercase;">Environment 2</div>
+                <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 800; margin-top: 0.35rem; margin-bottom: 0.75rem;">Grocery Retail Intelligence</h2>
+                <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5; margin-bottom: 1.5rem;">
+                    Store inventory split (Shelf vs Backroom), POS checkout sales, automatic backroom-to-shelf replenishment tasks, 11-step Festival Planning Wizard, and near-expiry markdowns.
+                </p>
+                <div style="border-t: 1px solid var(--border-color); pt-3; margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.8rem;">
+                    <div><span style="color: var(--text-muted);">Shelf Availability:</span> <strong>{{ grocery_data.shelf_availability_pct }}%</strong></div>
+                    <div><span style="color: var(--text-muted);">Today's Sales:</span> <strong>${{ grocery_data.today_sales_val }}</strong></div>
+                    <div><span style="color: var(--text-muted);">Expiry Sensitive:</span> <strong>{{ grocery_data.near_expiry_count }} SKUs</strong></div>
+                    <div><span style="color: var(--text-muted);">Replenish Tasks:</span> <strong>{{ grocery_data.pending_replenishments|length }}</strong></div>
+                </div>
+            </div>
+            <div style="margin-top: 2rem; text-align: right; color: var(--accent-cyan); font-weight: 700; font-size: 0.9rem;">
+                Launch Grocery Workspace <i class="fa-solid fa-arrow-right" style="margin-left: 0.3rem;"></i>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

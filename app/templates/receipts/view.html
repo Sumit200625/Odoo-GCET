@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Receipt {{ receipt.reference }} — StockSense{% endblock %}
+{% block header_title %}Receipt Details & Validation{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-truck-ramp-box" style="color: var(--primary);"></i>
+      Receipt: {{ receipt.reference }}
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      {% if receipt.status == 'Done' %}
+        <span class="badge badge-done" style="font-size: 14px; padding: 6px 14px;"><i class="fa-solid fa-check-double me-1"></i> Validated (Done)</span>
+      {% elif receipt.status == 'Canceled' %}
+        <span class="badge badge-canceled" style="font-size: 14px; padding: 6px 14px;"><i class="fa-solid fa-ban me-1"></i> Canceled</span>
+      {% else %}
+        <span class="badge badge-waiting" style="font-size: 14px; padding: 6px 14px;"><i class="fa-solid fa-clock me-1"></i> {{ receipt.status }}</span>
+      {% endif %}
+      <a href="{{ url_for('receipts.index') }}" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left"></i> Back to List
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 24px;">
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Supplier Name</div>
+        <div class="kpi-value" style="font-size: 18px; margin-top: 4px;">{{ receipt.supplier_name }}</div>
+      </div>
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Destination Location</div>
+        <div class="kpi-value" style="font-size: 16px; margin-top: 4px; color: var(--primary);">
+          {{ receipt.destination_location.full_name }}
+        </div>
+      </div>
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Created By</div>
+        <div class="kpi-value" style="font-size: 16px; margin-top: 4px;">{{ receipt.creator.name }}</div>
+      </div>
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Date Created</div>
+        <div class="kpi-value" style="font-size: 14px; margin-top: 4px;">{{ receipt.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+      </div>
+    </div>
+
+    <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">Products to Receive</h4>
+    <div class="table-responsive" style="margin-bottom: 28px;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Product Name</th>
+            <th>Quantity Received</th>
+            <th>Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in receipt.lines %}
+          <tr>
+            <td><code>{{ line.product.sku }}</code></td>
+            <td><strong>{{ line.product.name }}</strong></td>
+            <td><strong style="font-size: 16px; color: var(--success);">+{{ line.quantity }}</strong></td>
+            <td>{{ line.product.unit }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if receipt.status != 'Done' and receipt.status != 'Canceled' %}
+      {% if current_user.role in ['admin', 'manager'] %}
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Validate Receipt</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Validating will instantly update stock balances and commit a permanent move history ledger entry.</div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <form action="{{ url_for('receipts.cancel', id=receipt.id) }}" method="POST">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Cancel this receipt draft?')">
+              <i class="fa-solid fa-ban"></i> Cancel Receipt
+            </button>
+          </form>
+
+          <form action="{{ url_for('receipts.validate', id=receipt.id) }}" method="POST">
+            <button type="submit" class="btn btn-success" style="padding: 10px 24px;">
+              <i class="fa-solid fa-check"></i> Validate & Receive Stock
+            </button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <div style="background: #f1f5f9; padding: 16px; border-radius: var(--radius-md); font-size: 13px; color: var(--text-muted); text-align: center;">
+        <i class="fa-solid fa-lock me-1"></i> Receipt validation requires <strong>Manager</strong> or <strong>Admin</strong> privileges.
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

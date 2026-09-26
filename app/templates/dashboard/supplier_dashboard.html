@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}StockSense — Supplier Intelligence Portal{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 2rem;">
+    <h1 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800;">Supplier Performance & Procurement Portal</h1>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">Track supplier scorecards, delivery reliability, on-time rates, quality acceptance, and open purchase orders.</p>
+</div>
+
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-award" style="color: var(--accent-indigo); margin-right: 0.5rem;"></i> Supplier Scorecard & Performance Ranking</span>
+        <a href="{{ url_for('suppliers.index') }}" class="btn-primary" style="font-size: 0.8rem;">Compare Suppliers</a>
+    </div>
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>Supplier Code</th>
+                    <th>Supplier Name</th>
+                    <th>Lead Time</th>
+                    <th>On-Time Delivery %</th>
+                    <th>Fill Rate %</th>
+                    <th>Quality Acceptance %</th>
+                    <th>Scorecard Score</th>
+                    <th>Classification</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in data.suppliers %}
+                <tr>
+                    <td><code>{{ s.code }}</code></td>
+                    <td><strong>{{ s.name }}</strong></td>
+                    <td>{{ s.lead_time_days }} days (±{{ s.lead_time_variance_days }}d)</td>
+                    <td>{{ s.on_time_delivery_rate }}%</td>
+                    <td>{{ s.fill_rate_pct }}%</td>
+                    <td>{{ s.quality_acceptance_rate }}%</td>
+                    <td>
+                        <strong style="font-size: 1.1rem; color: {% if s.computed_score >= 90 %}var(--accent-emerald){% elif s.computed_score >= 80 %}var(--accent-cyan){% else %}var(--accent-amber){% endif %};">
+                            {{ s.computed_score }}/100
+                        </strong>
+                    </td>
+                    <td>
+                        <span class="badge {% if s.computed_classification == 'Strategic' %}badge-healthy{% elif s.computed_classification == 'Reliable' %}badge-info{% else %}badge-high{% endif %}">
+                            {{ s.computed_classification }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="section-card">
+    <div class="section-title">
+        <span><i class="fa-solid fa-file-invoice-dollar" style="color: var(--accent-emerald); margin-right: 0.5rem;"></i> Open Purchase Orders & Delivery Schedules</span>
+    </div>
+    <div class="table-responsive">
+        <table class="stock-table">
+            <thead>
+                <tr>
+                    <th>PO Number</th>
+                    <th>Supplier</th>
+                    <th>Destination Warehouse</th>
+                    <th>Total Amount</th>
+                    <th>Expected Delivery Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for po in data.open_purchase_orders %}
+                <tr>
+                    <td><code>{{ po.po_number }}</code></td>
+                    <td>{{ po.supplier.name if po.supplier else 'Default Supplier' }}</td>
+                    <td>{{ po.warehouse.name if po.warehouse else 'Main Warehouse' }}</td>
+                    <td>${{ "{:,.2f}".format(po.total_amount) }}</td>
+                    <td>{{ po.expected_delivery_date.strftime('%Y-%m-%d') if po.expected_delivery_date else 'Pending' }}</td>
+                    <td><span class="badge badge-info">{{ po.status }}</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted);">No open purchase orders pending delivery.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

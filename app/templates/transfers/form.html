@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Internal Transfer — StockSense{% endblock %}
+{% block header_title %}Create Internal Stock Transfer{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-right-left" style="color: var(--primary);"></i>
+      New Internal Transfer Form
+    </div>
+    <a href="{{ url_for('transfers.index') }}" class="btn btn-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Cancel
+    </a>
+  </div>
+
+  <div class="card-body">
+    <form action="{{ url_for('transfers.create') }}" method="POST">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="source_location_id">Source Location (From) *</label>
+          <select id="source_location_id" name="source_location_id" class="form-select" required autofocus>
+            <option value="">Select Origin Location</option>
+            {% for loc in locations %}
+              <option value="{{ loc.id }}">{{ loc.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="destination_location_id">Destination Location (To) *</label>
+          <select id="destination_location_id" name="destination_location_id" class="form-select" required>
+            <option value="">Select Target Location</option>
+            {% for loc in locations %}
+              <option value="{{ loc.id }}">{{ loc.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h4 style="font-size: 15px; font-weight: 700;">Transfer Line Items</h4>
+        <button type="button" id="add-line-btn" class="btn btn-secondary btn-sm">
+          <i class="fa-solid fa-plus"></i> Add Line Product
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table line-items-table">
+          <thead>
+            <tr>
+              <th style="width: 60%;">Product *</th>
+              <th style="width: 30%;">Quantity to Transfer *</th>
+              <th style="width: 10%; text-align: center;">Remove</th>
+            </tr>
+          </thead>
+          <tbody id="line-items-tbody">
+            <tr>
+              <td>
+                <select name="product_id[]" class="form-select" required>
+                  <option value="">Select Product...</option>
+                  {% for p in products %}
+                    <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }}) — Unit: {{ p.unit }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <input type="number" step="0.01" min="0.01" name="quantity[]" class="form-control" placeholder="Quantity" required>
+              </td>
+              <td style="text-align: center;">
+                <button type="button" class="btn btn-danger btn-sm remove-line-btn"><i class="fa-solid fa-trash"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 28px; display: flex; justify-content: flex-end; gap: 12px;">
+        <a href="{{ url_for('transfers.index') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> Create Transfer (Draft)
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

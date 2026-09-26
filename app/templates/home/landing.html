@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockSense — See Tomorrow's Inventory Problems Today</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-dark-mode">
+
+    <!-- Top Navigation Header -->
+    <header style="padding: 1.5rem 4rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color);">
+        <a href="/" class="brand-logo">
+            <i class="fa-solid fa-boxes-stacked brand-icon"></i>
+            <span>Stock<span class="brand-accent">Sense</span></span>
+        </a>
+
+        <div style="display: flex; align-items: center; gap: 2rem;">
+            <a href="#features" style="color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">Features</a>
+            <a href="#demo" style="color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">Live Demo</a>
+            <a href="#metrics" style="color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500;">Impact</a>
+            <a href="{{ url_for('auth.login') }}" class="btn-secondary" style="font-size: 0.85rem;">Sign In</a>
+            <a href="{{ url_for('domain.select') }}" class="btn-primary" style="font-size: 0.85rem;">Launch Platform <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section style="padding: 5rem 4rem 3rem 4rem; text-align: center; max-width: 1000px; margin: 0 auto;">
+        <div class="system-badge" style="display: inline-block; margin-bottom: 1.5rem; font-size: 0.8rem; padding: 6px 16px;">
+            AI-Powered Inventory Intelligence Engine 2.0
+        </div>
+
+        <h1 style="font-family: 'Outfit', sans-serif; font-size: 3.5rem; font-weight: 900; line-height: 1.15; margin-bottom: 1.5rem;">
+            See Tomorrow’s Inventory <span style="background: linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Problems Today.</span>
+        </h1>
+
+        <p style="font-size: 1.15rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 2.5rem; max-width: 800px; margin-left: auto; margin-right: auto;">
+            StockSense connects inventory balances, AI demand forecasting, warehouse operations, grocery retail, price intelligence, and automated reorders into one unified decision-support platform.
+        </p>
+
+        <div style="display: flex; justify-content: center; gap: 1.25rem;">
+            <a href="{{ url_for('domain.select') }}" class="btn-primary" style="font-size: 1rem; padding: 0.85rem 2rem;">
+                <i class="fa-solid fa-rocket"></i> Start Free Demo Mode
+            </a>
+            <a href="{{ url_for('scan.index') }}" class="btn-secondary" style="font-size: 1rem; padding: 0.85rem 2rem;">
+                <i class="fa-solid fa-barcode"></i> Scan Barcode Now
+            </a>
+        </div>
+    </section>
+
+    <!-- Interactive Live Scan-to-Intelligence Demonstration Widget -->
+    <section id="demo" style="padding: 3rem 4rem; max-width: 1100px; margin: 0 auto;">
+        <div class="section-card" style="border: 2px solid var(--border-glowing); background: var(--bg-card);">
+            <div class="section-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <span><i class="fa-solid fa-bolt" style="color: var(--accent-amber); margin-right: 0.5rem;"></i> Live Scan-to-Intelligence Cycle Demonstration</span>
+                <span class="badge badge-healthy">Scan &rarr; Identify &rarr; Forecast &rarr; Recommend</span>
+            </div>
+
+            {% if demo_panel and demo_panel.found %}
+            <div class="scan-panel-grid">
+                <div class="panel-block">
+                    <div class="panel-block-title"><i class="fa-solid fa-id-badge"></i> 1. Product Identity</div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: #fff;">{{ demo_panel.identity.name }}</div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">SKU: <code>{{ demo_panel.identity.sku }}</code> | Barcode: <code>{{ demo_panel.identity.barcode }}</code></div>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem;">Brand: {{ demo_panel.identity.brand }} &bull; Category: {{ demo_panel.identity.category }}</div>
+                </div>
+
+                <div class="panel-block">
+                    <div class="panel-block-title"><i class="fa-solid fa-tag"></i> 2. Commercial & Price</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent-emerald);">${{ demo_panel.commercial.active_price }}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">MRP: ${{ demo_panel.commercial.mrp }} ({{ demo_panel.commercial.discount_pct }}% OFF)</div>
+                    <div style="font-size: 0.8rem; color: var(--accent-cyan); margin-top: 0.2rem;">Margin: {{ demo_panel.commercial.margin_pct }}%</div>
+                </div>
+
+                <div class="panel-block">
+                    <div class="panel-block-title"><i class="fa-solid fa-boxes-stacked"></i> 3. Inventory Position</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #fff;">{{ demo_panel.inventory_position.total_stock }} {{ demo_panel.identity.unit }}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">Shelf: {{ demo_panel.inventory_position.shelf_stock }} | Backroom: {{ demo_panel.inventory_position.backroom_stock }} | WH: {{ demo_panel.inventory_position.warehouse_stock }}</div>
+                    <div style="font-size: 0.8rem; color: var(--accent-amber); margin-top: 0.2rem;">Earliest Expiry: {{ demo_panel.inventory_position.earliest_expiry }}</div>
+                </div>
+
+                <div class="panel-block">
+                    <div class="panel-block-title"><i class="fa-solid fa-brain"></i> 4. AI & Reorder Recommendation</div>
+                    <div style="font-size: 0.95rem; font-weight: 700; color: var(--accent-indigo);">Health Score: {{ demo_panel.ai_intelligence.health_score }}% ({{ demo_panel.ai_intelligence.health_category }})</div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">Predicted 30d Demand: {{ demo_panel.ai_intelligence.forecast_30d }} {{ demo_panel.identity.unit }}</div>
+                    <div style="font-size: 0.82rem; color: var(--accent-emerald); font-weight: 600; margin-top: 0.4rem;">
+                        <i class="fa-solid fa-circle-check"></i> {{ demo_panel.ai_intelligence.recommended_action }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Dual Operating Environments Section -->
+    <section id="features" style="padding: 4rem; max-width: 1200px; margin: 0 auto;">
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; text-align: center; margin-bottom: 3rem;">
+            Two Intelligent Operating Environments in One Platform
+        </h2>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
+            <!-- Environment 1: Warehouse Intelligence -->
+            <div class="section-card" style="border: 2px solid var(--accent-indigo);">
+                <div class="domain-card-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo);">
+                    <i class="fa-solid fa-warehouse"></i>
+                </div>
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem;">1. Warehouse Intelligence</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                    Full warehouse location hierarchy (Zone &rarr; Aisle &rarr; Rack &rarr; Shelf &rarr; Bin), capacity heatmaps, directed put-away execution, FEFO/FIFO picking path optimization, and supplier performance scorecards.
+                </p>
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                    <li><i class="fa-solid fa-check" style="color: var(--accent-emerald);"></i> Visual storage rack grid & volume occupancy</li>
+                    <li><i class="fa-solid fa-check" style="color: var(--accent-emerald);"></i> Directed put-away location scoring</li>
+                    <li><i class="fa-solid fa-check" style="color: var(--accent-emerald);"></i> Wave picking path optimization</li>
+                </ul>
+                <a href="{{ url_for('domain.switch_domain', domain_name='warehouse') }}" class="btn-primary">Launch Warehouse Intelligence</a>
+            </div>
+
+            <!-- Environment 2: Grocery Retail Intelligence -->
+            <div class="section-card" style="border: 2px solid var(--accent-cyan);">
+                <div class="domain-card-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan);">
+                    <i class="fa-solid fa-store"></i>
+                </div>
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem;">2. Grocery Retail Intelligence</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                    Store inventory split (Shelf vs Backroom vs Warehouse), POS checkout sales, automatic backroom-to-shelf replenishment, Festival Planning Wizard (11 steps), and near-expiry dynamic markdowns.
+                </p>
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                    <li><i class="fa-solid fa-check" style="color: var(--accent-emerald);"></i> Shelf stock vs Backroom stock tracking</li>
+                    <li><i class="fa-solid fa-check" style="color: var(--accent-emerald);"></i> Festival Planning Wizard (Diwali, Eid, Christmas, etc.)</li>
+                    <li><i class="fa-solid fa-check" style="color: var(--accent-emerald);"></i> Price Intelligence & dynamic clearance markdowns</li>
+                </ul>
+                <a href="{{ url_for('domain.switch_domain', domain_name='grocery') }}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">Launch Grocery Intelligence</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Operational Metrics Impact -->
+    <section id="metrics" style="padding: 3rem 4rem 5rem 4rem; max-width: 1100px; margin: 0 auto;">
+        <div class="section-card" style="text-align: center;">
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800; margin-bottom: 2rem;">Proven Operational Impact</h3>
+            <div class="grid-container" style="margin-bottom: 0;">
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 900; color: var(--accent-emerald); font-family: 'Outfit', sans-serif;">-68%</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">Stockout Incidents</div>
+                </div>
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 900; color: var(--accent-cyan); font-family: 'Outfit', sans-serif;">+34%</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">Inventory Turnover Ratio</div>
+                </div>
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 900; color: var(--accent-indigo); font-family: 'Outfit', sans-serif;">-45%</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">Food & Perishable Waste</div>
+                </div>
+                <div>
+                    <div style="font-size: 2.5rem; font-weight: 900; color: var(--accent-amber); font-family: 'Outfit', sans-serif;">94.2%</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">AI Forecast Accuracy</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

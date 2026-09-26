@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}User & Role Management — StockSense{% endblock %}
+{% block header_title %}User Accounts & Role-Based Access Control (RBAC){% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-users-gear" style="color: var(--primary);"></i>
+      System Users & RBAC Configuration
+    </div>
+    <span class="badge badge-op-adjustment">Admin Privilege</span>
+  </div>
+
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email Address</th>
+            <th>Current Role</th>
+            <th>Date Registered</th>
+            <th>Change Role (RBAC)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>#{{ u.id }}</td>
+            <td><strong>{{ u.name }}</strong></td>
+            <td><code>{{ u.email }}</code></td>
+            <td>
+              {% if u.role == 'admin' %}
+                <span class="badge badge-canceled"><i class="fa-solid fa-shield-halved me-1"></i> Admin</span>
+              {% elif u.role == 'manager' %}
+                <span class="badge badge-waiting"><i class="fa-solid fa-user-tie me-1"></i> Manager</span>
+              {% else %}
+                <span class="badge badge-done"><i class="fa-solid fa-user me-1"></i> Staff</span>
+              {% endif %}
+            </td>
+            <td style="font-size: 12px; color: var(--text-muted);">
+              {{ u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else 'Initial Seed' }}
+            </td>
+            <td>
+              <form action="{{ url_for('auth.update_user_role', user_id=u.id) }}" method="POST" style="display: flex; gap: 8px; align-items: center;">
+                <select name="role" class="form-select" style="padding: 4px 8px; font-size: 12px; min-width: 110px;">
+                  <option value="staff" {% if u.role == 'staff' %}selected{% endif %}>Staff</option>
+                  <option value="manager" {% if u.role == 'manager' %}selected{% endif %}>Manager</option>
+                  <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Admin</option>
+                </select>
+                <button type="submit" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 12px;">Save</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Grocery Waste Management - StockSense{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-trash3 text-danger me-2"></i>Waste & Shrinkage Management</h2>
+            <p class="text-muted mb-0">Record perishable expiry, spoilage, and damaged store stock with immediate inventory ledger adjustment.</p>
+        </div>
+        <div>
+            <a href="{{ url_for('grocery.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Grocery Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Metric Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <h6 class="text-muted text-uppercase mb-1 small fw-bold">Total Waste Records</h6>
+                <h3 class="fw-bold mb-0 text-dark">{{ records|length }}</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3 border-start border-danger border-4">
+                <h6 class="text-muted text-uppercase mb-1 small fw-bold">Total Waste Value</h6>
+                <h3 class="fw-bold mb-0 text-danger">
+                    ${{ "%.2f"|format(records|sum(attribute='total_cost_waste')) }}
+                </h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <h6 class="text-muted text-uppercase mb-1 small fw-bold">Primary Waste Category</h6>
+                <h3 class="fw-bold mb-0 text-warning">Perishable Expiry</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3 border-start border-success border-4">
+                <h6 class="text-muted text-uppercase mb-1 small fw-bold">Compliance Rate</h6>
+                <h3 class="fw-bold mb-0 text-success">100%</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Log Waste Form -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-danger text-white py-3">
+                    <h5 class="card-title mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Record New Waste</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('grocery.waste_management') }}">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Select Product</label>
+                            <select name="product_id" class="form-select" required>
+                                <option value="">-- Choose Product --</option>
+                                {% for p in products %}
+                                <option value="{{ p.id }}">{{ p.sku }} - {{ p.name }} (Shelf: {{ p.shelf_stock }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Quantity Disposed</label>
+                            <input type="number" step="0.01" name="quantity" class="form-control" placeholder="e.g. 5.0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Waste Reason</label>
+                            <select name="reason" class="form-select" required>
+                                <option value="Expired">Expired / Past Date</option>
+                                <option value="Spoiled/Rotten">Spoiled / Rotten (Fresh Produce)</option>
+                                <option value="Damaged Handling">Damaged in Store Handling</option>
+                                <option value="Customer Return Damage">Customer Return Damage</option>
+                                <option value="Cold Chain Failure">Cold Chain Temperature Excursion</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Notes / Audit Details</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Optional audit explanation..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100 py-2 fw-bold">
+                            <i class="bi bi-trash-fill me-1"></i> Log Disposal & Deduct Inventory
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waste History Table -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0"><i class="bi bi-journal-text me-2 text-danger"></i>Waste Audit History</h5>
+                    <span class="badge bg-secondary">{{ records|length }} records</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Record #</th>
+                                    <th>Product</th>
+                                    <th>Qty Disposed</th>
+                                    <th>Total Cost</th>
+                                    <th>Reason</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in records %}
+                                <tr>
+                                    <td class="fw-bold text-muted">#{{ r.record_code }}</td>
+                                    <td>
+                                        <div class="fw-bold">{{ r.product.name if r.product else 'SKU #' ~ r.product_id }}</div>
+                                        <div class="small text-muted">{{ r.product.sku if r.product else '' }}</div>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">{{ r.quantity }} units</span></td>
+                                    <td class="fw-bold text-danger">${{ "%.2f"|format(r.total_cost_waste) }}</td>
+                                    <td><span class="badge bg-danger text-wrap">{{ r.reason }}</span></td>
+                                    <td class="small text-muted">{{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else 'N/A' }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">No waste records logged yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

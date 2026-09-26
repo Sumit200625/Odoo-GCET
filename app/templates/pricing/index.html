@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block title %}Price Intelligence Studio - StockSense{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-tag text-primary me-2"></i>Price Intelligence & Markdown Studio</h2>
+            <p class="text-muted mb-0">Margin protection, near-expiry dynamic markdowns, festival price tiers, and immutable price audit logging.</p>
+        </div>
+        <div>
+            <span class="badge bg-primary px-3 py-2 fs-6"><i class="bi bi-shield-check me-1"></i> Pricing Governance Active</span>
+        </div>
+    </div>
+
+    <!-- Section 1: AI Near-Expiry Dynamic Markdown Recommendations -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-warning bg-opacity-10 py-3 border-bottom border-warning">
+            <h5 class="card-title mb-0 text-dark fw-bold">
+                <i class="bi bi-clock-history text-warning me-2"></i>AI Near-Expiry Markdown Recommendations
+            </h5>
+            <small class="text-muted">Dynamic discount pricing to maximize revenue recovery on inventory approaching expiration</small>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% for rec in markdown_recs %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card border-warning h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-danger">{{ rec.days_remaining }} days to expiry</span>
+                                <span class="badge bg-warning text-dark fw-bold">{{ rec.markdown_percent }}% OFF</span>
+                            </div>
+                            <h5 class="fw-bold card-title text-dark mb-1">{{ rec.product_name }}</h5>
+                            <p class="small text-muted mb-2">SKU: {{ rec.sku }} | Current Price: <s>${{ "%.2f"|format(rec.current_price) }}</s></p>
+                            
+                            <div class="p-2 bg-light rounded mb-3">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Recommended Price:</span>
+                                    <strong class="text-success fs-6">${{ "%.2f"|format(rec.recommended_markdown_price) }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between small">
+                                    <span>Est. Revenue Recovered:</span>
+                                    <strong class="text-primary">${{ "%.2f"|format(rec.estimated_revenue_recovery) }}</strong>
+                                </div>
+                            </div>
+
+                            <p class="small text-muted mb-3"><em>"{{ rec.rationale }}"</em></p>
+
+                            <form method="POST" action="{{ url_for('pricing.index') }}">
+                                <input type="hidden" name="product_id" value="{{ rec.product_id }}">
+                                <input type="hidden" name="new_price" value="{{ rec.recommended_markdown_price }}">
+                                <input type="hidden" name="price_type" value="Markdown">
+                                <input type="hidden" name="rationale" value="AI Near-Expiry Markdown ({{ rec.days_remaining }} days left)">
+                                <button type="submit" class="btn btn-warning btn-sm w-100 fw-bold">
+                                    <i class="bi bi-check-lg me-1"></i> Apply Recommended Markdown
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12 text-center py-4 text-muted">
+                    <i class="bi bi-check-circle text-success fs-2 d-block mb-2"></i>
+                    No high-risk near-expiry markdown recommendations required right now.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Manual Price Adjustment & Immutable History Ledger -->
+    <div class="row g-4">
+        <!-- Manual Price Adjustment Form -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="card-title mb-0"><i class="bi bi-pencil-square me-2"></i>Update Product Price</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('pricing.index') }}">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Select Product</label>
+                            <select name="product_id" class="form-select" required>
+                                <option value="">-- Choose Product --</option>
+                                {% for p in products %}
+                                <option value="{{ p.id }}">{{ p.sku }} - {{ p.name }} (Current: ${{ "%.2f"|format(p.selling_price) }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">New Selling Price ($)</label>
+                            <input type="number" step="0.01" name="new_price" class="form-control" placeholder="e.g. 14.99" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Price Category</label>
+                            <select name="price_type" class="form-select">
+                                <option value="Standard">Standard Selling Price</option>
+                                <option value="Promotion">Promotional Price</option>
+                                <option value="Festival">Festival Tier Price</option>
+                                <option value="Markdown">Clearance Markdown</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Adjustment Rationale</label>
+                            <textarea name="rationale" class="form-control" rows="2" placeholder="Required for governance audit log..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">
+                            <i class="bi bi-save me-1"></i> Update & Commit to History Ledger
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Immutable Price Audit Ledger -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0"><i class="bi bi-shield-lock me-2 text-primary"></i>Immutable Price History Ledger</h5>
+                    <span class="badge bg-secondary">Recent 20 Records</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Old Price</th>
+                                    <th>New Price</th>
+                                    <th>Price Type</th>
+                                    <th>Rationale</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for h in histories %}
+                                <tr>
+                                    <td class="fw-bold">{{ h.product.name if h.product else 'SKU #' ~ h.product_id }}</td>
+                                    <td><s>${{ "%.2f"|format(h.old_price) }}</s></td>
+                                    <td class="fw-bold text-success">${{ "%.2f"|format(h.new_price) }}</td>
+                                    <td><span class="badge bg-info text-dark">{{ h.price_type }}</span></td>
+                                    <td class="small text-muted">{{ h.rationale or 'N/A' }}</td>
+                                    <td class="small text-muted">{{ h.created_at.strftime('%Y-%m-%d %H:%M') if h.created_at else 'N/A' }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">No price change logs found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
