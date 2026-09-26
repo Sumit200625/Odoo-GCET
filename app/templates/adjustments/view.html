@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Adjustment {{ adjustment.reference }} — StockSense{% endblock %}
+{% block header_title %}Stock Adjustment Audit Details{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-sliders" style="color: var(--primary);"></i>
+      Stock Adjustment: {{ adjustment.reference }}
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      {% if adjustment.status == 'Done' %}
+        <span class="badge badge-done" style="font-size: 14px; padding: 6px 14px;"><i class="fa-solid fa-check-double me-1"></i> Validated & Applied (Done)</span>
+      {% elif adjustment.status == 'Canceled' %}
+        <span class="badge badge-canceled" style="font-size: 14px; padding: 6px 14px;"><i class="fa-solid fa-ban me-1"></i> Canceled</span>
+      {% else %}
+        <span class="badge badge-waiting" style="font-size: 14px; padding: 6px 14px;"><i class="fa-solid fa-clock me-1"></i> Draft</span>
+      {% endif %}
+      <a href="{{ url_for('adjustments.index') }}" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left"></i> Back to List
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 24px;">
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Audit Storage Location</div>
+        <div class="kpi-value" style="font-size: 16px; margin-top: 4px; color: var(--primary);">
+          {{ adjustment.location.full_name }}
+        </div>
+      </div>
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Reason / Audit Note</div>
+        <div class="kpi-value" style="font-size: 15px; margin-top: 4px;">{{ adjustment.reason or 'N/A' }}</div>
+      </div>
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Created By</div>
+        <div class="kpi-value" style="font-size: 16px; margin-top: 4px;">{{ adjustment.creator.name }}</div>
+      </div>
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Date Created</div>
+        <div class="kpi-value" style="font-size: 14px; margin-top: 4px;">{{ adjustment.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+      </div>
+    </div>
+
+    <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">Physical Inventory Count Comparison</h4>
+    <div class="table-responsive" style="margin-bottom: 28px;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Product Name</th>
+            <th>Recorded Stock Qty</th>
+            <th>Physical Counted Qty</th>
+            <th>Difference Adjustment</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in adjustment.lines %}
+          <tr>
+            <td><code>{{ line.product.sku }}</code></td>
+            <td><strong>{{ line.product.name }}</strong></td>
+            <td>{{ line.recorded_quantity }} {{ line.product.unit }}</td>
+            <td><strong style="font-size: 16px;">{{ line.counted_quantity }} {{ line.product.unit }}</strong></td>
+            <td>
+              {% if line.difference > 0 %}
+                <span style="color: var(--success); font-weight: 700;">+{{ line.difference }} {{ line.product.unit }}</span>
+              {% elif line.difference < 0 %}
+                <span style="color: var(--danger); font-weight: 700;">{{ line.difference }} {{ line.product.unit }}</span>
+              {% else %}
+                <span style="color: var(--text-muted); font-weight: 700;">0 {{ line.product.unit }} (No Change)</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if adjustment.status != 'Done' and adjustment.status != 'Canceled' %}
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+      <div>
+        <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Validate & Apply Inventory Adjustment</div>
+        <div style="font-size: 12px; color: var(--text-muted);">Stock balance will be permanently overwritten to the physical counted quantity. The difference will be logged in the stock ledger.</div>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <form action="{{ url_for('adjustments.cancel', id=adjustment.id) }}" method="POST">
+          <button type="submit" class="btn btn-danger" onclick="return confirm('Cancel this adjustment draft?')">
+            <i class="fa-solid fa-ban"></i> Cancel Adjustment
+          </button>
+        </form>
+
+        <form action="{{ url_for('adjustments.validate', id=adjustment.id) }}" method="POST">
+          <button type="submit" class="btn btn-success" style="padding: 10px 24px;">
+            <i class="fa-solid fa-check"></i> Validate & Apply Stock Adjustment
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

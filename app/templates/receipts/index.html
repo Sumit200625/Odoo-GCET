@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Incoming Receipts — StockSense{% endblock %}
+{% block header_title %}Receipts (Incoming Goods){% endblock %}
+
+{% block content %}
+<div class="filter-bar">
+  <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+    <span style="font-weight: 600; font-size: 14px;">Status Filter:</span>
+    <a href="{{ url_for('receipts.index') }}" class="btn btn-sm {% if not current_status %}btn-primary{% else %}btn-secondary{% endif %}">All Receipts</a>
+    <a href="{{ url_for('receipts.index', status='Draft') }}" class="btn btn-sm {% if current_status == 'Draft' %}btn-primary{% else %}btn-secondary{% endif %}">Draft</a>
+    <a href="{{ url_for('receipts.index', status='Waiting') }}" class="btn btn-sm {% if current_status == 'Waiting' %}btn-primary{% else %}btn-secondary{% endif %}">Waiting</a>
+    <a href="{{ url_for('receipts.index', status='Done') }}" class="btn btn-sm {% if current_status == 'Done' %}btn-primary{% else %}btn-secondary{% endif %}">Done</a>
+    <a href="{{ url_for('receipts.index', status='Canceled') }}" class="btn btn-sm {% if current_status == 'Canceled' %}btn-primary{% else %}btn-secondary{% endif %}">Canceled</a>
+
+    <div style="margin-left: auto;">
+      <a href="{{ url_for('receipts.create') }}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> Create Receipt
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Supplier Name</th>
+            <th>Destination Location</th>
+            <th>Created By</th>
+            <th>Date Created</th>
+            <th>Status</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in receipts %}
+          <tr>
+            <td><strong>{{ r.reference }}</strong></td>
+            <td>{{ r.supplier_name }}</td>
+            <td>{{ r.destination_location.full_name }}</td>
+            <td>{{ r.creator.name }}</td>
+            <td style="font-size: 12px; color: var(--text-muted);">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+              {% if r.status == 'Done' %}
+                <span class="badge badge-done"><i class="fa-solid fa-check-double"></i> Done</span>
+              {% elif r.status == 'Waiting' or r.status == 'Draft' %}
+                <span class="badge badge-waiting"><i class="fa-solid fa-clock"></i> {{ r.status }}</span>
+              {% else %}
+                <span class="badge badge-canceled"><i class="fa-solid fa-ban"></i> Canceled</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <a href="{{ url_for('receipts.view', id=r.id) }}" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-eye"></i> View Order
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">
+              No receipts found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

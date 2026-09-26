@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}StockSense — Real-time Inventory Management System{% endblock %}</title>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if current_user.is_authenticated %}
+<div class="app-container">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-logo">
+        <i class="fa-solid fa-boxes-stacked"></i>
+      </div>
+      <div class="brand-title">Stock<span>Sense</span></div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main Navigation</div>
+      
+      <a href="{{ url_for('dashboard.index') }}" class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Dashboard</span>
+      </a>
+
+      <a href="{{ url_for('products.index') }}" class="nav-item {% if 'products' in request.endpoint %}active{% endif %}">
+        <i class="fa-solid fa-box"></i>
+        <span>Products</span>
+      </a>
+
+      <a href="{{ url_for('warehouses.index') }}" class="nav-item {% if 'warehouses' in request.endpoint %}active{% endif %}">
+        <i class="fa-solid fa-warehouse"></i>
+        <span>Warehouses</span>
+      </a>
+
+      <div class="nav-section-label">Stock Operations</div>
+
+      <a href="{{ url_for('receipts.index') }}" class="nav-item {% if 'receipts' in request.endpoint %}active{% endif %}">
+        <i class="fa-solid fa-truck-ramp-box"></i>
+        <span>Receipts (Incoming)</span>
+      </a>
+
+      <a href="{{ url_for('deliveries.index') }}" class="nav-item {% if 'deliveries' in request.endpoint %}active{% endif %}">
+        <i class="fa-solid fa-truck-fast"></i>
+        <span>Deliveries (Outgoing)</span>
+      </a>
+
+      <a href="{{ url_for('transfers.index') }}" class="nav-item {% if 'transfers' in request.endpoint %}active{% endif %}">
+        <i class="fa-solid fa-right-left"></i>
+        <span>Internal Transfers</span>
+      </a>
+
+      <a href="{{ url_for('adjustments.index') }}" class="nav-item {% if 'adjustments' in request.endpoint %}active{% endif %}">
+        <i class="fa-solid fa-sliders"></i>
+        <span>Stock Adjustments</span>
+      </a>
+
+      <div class="nav-section-label">Audit & Security</div>
+
+      <a href="{{ url_for('ledger.index') }}" class="nav-item {% if 'ledger' in request.endpoint %}active{% endif %}">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>Move History</span>
+      </a>
+
+      {% if current_user.role == 'admin' %}
+      <a href="{{ url_for('auth.users_list') }}" class="nav-item {% if 'users' in request.endpoint %}active{% endif %}">
+        <i class="fa-solid fa-users-gear"></i>
+        <span>Users & RBAC</span>
+      </a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-profile">
+        <div class="avatar">{{ current_user.name[:2].upper() }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ current_user.name }}</div>
+          <div class="user-role">
+            {% if current_user.role == 'admin' %}
+              <span style="color: #f87171; font-weight: 700;">Admin</span>
+            {% elif current_user.role == 'manager' %}
+              <span style="color: #60a5fa; font-weight: 700;">Manager</span>
+            {% else %}
+              <span style="color: #4ade80; font-weight: 700;">Staff</span>
+            {% endif %}
+          </div>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="logout-btn" title="Logout">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <div class="main-content">
+    <header class="top-header">
+      <div class="header-title">{% block header_title %}StockSense Dashboard{% endblock %}</div>
+      <div class="header-actions">
+        <span class="badge {% if current_user.role == 'admin' %}badge-canceled{% elif current_user.role == 'manager' %}badge-waiting{% else %}badge-done{% endif %}" style="padding: 6px 12px; font-size: 13px;">
+          <i class="fa-solid fa-shield-halved me-1"></i> Role: {{ current_user.role.capitalize() }}
+        </span>
+        <a href="{{ url_for('receipts.create') }}" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-plus"></i> New Receipt
+        </a>
+        <a href="{{ url_for('deliveries.create') }}" class="btn btn-secondary btn-sm">
+          <i class="fa-solid fa-plus"></i> New Delivery
+        </a>
+      </div>
+    </header>
+
+    <main class="page-wrapper">
+      <!-- FLASH MESSAGES -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                <span><i class="fa-solid fa-info-circle me-2"></i> {{ message }}</span>
+                <button type="button" class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% else %}
+  <!-- UNAUTHENTICATED (AUTH PAGES) -->
+  <div class="auth-wrapper">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container" style="position: fixed; top: 20px; right: 20px; z-index: 999; max-width: 400px;">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+              <button type="button" class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block auth_content %}{% endblock %}
+  </div>
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

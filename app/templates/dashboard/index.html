@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard — StockSense Inventory{% endblock %}
+{% block header_title %}Inventory Overview & Analytics{% endblock %}
+
+{% block content %}
+<!-- WAREHOUSE FILTER BAR -->
+<div class="filter-bar">
+  <form method="GET" action="{{ url_for('dashboard.index') }}" style="display: flex; align-items: center; gap: 12px; width: 100%;">
+    <i class="fa-solid fa-filter" style="color: var(--text-muted);"></i>
+    <span style="font-weight: 600; font-size: 14px;">Filter Warehouse:</span>
+    
+    <select name="warehouse_id" class="form-select" onchange="this.form.submit()">
+      <option value="">All Warehouses (Global View)</option>
+      {% for wh in warehouses %}
+        <option value="{{ wh.id }}" {% if selected_wh == wh.id %}selected{% endif %}>
+          {{ wh.name }} ({{ wh.code }})
+        </option>
+      {% endfor %}
+    </select>
+
+    {% if selected_wh %}
+      <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary btn-sm">Clear Filter</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- KPI CARDS GRID -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-title">Total Products</span>
+      <div class="kpi-icon-box kpi-icon-blue"><i class="fa-solid fa-boxes-stacked"></i></div>
+    </div>
+    <div class="kpi-value">{{ kpis.total_products }}</div>
+    <div class="kpi-subtext">Active catalog items</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-title">Total Stock Qty</span>
+      <div class="kpi-icon-box kpi-icon-green"><i class="fa-solid fa-cubes"></i></div>
+    </div>
+    <div class="kpi-value">{{ kpis.total_stock_quantity }}</div>
+    <div class="kpi-subtext">Aggregate units across locations</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-title">Low Stock Items</span>
+      <div class="kpi-icon-box kpi-icon-amber"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    </div>
+    <div class="kpi-value" style="color: var(--warning);">{{ kpis.low_stock_count }}</div>
+    <div class="kpi-subtext">Below reorder threshold</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-title">Out of Stock</span>
+      <div class="kpi-icon-box kpi-icon-red"><i class="fa-solid fa-circle-xmark"></i></div>
+    </div>
+    <div class="kpi-value" style="color: var(--danger);">{{ kpis.out_of_stock_count }}</div>
+    <div class="kpi-subtext">Zero inventory balance</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-title">Pending Receipts</span>
+      <div class="kpi-icon-box kpi-icon-cyan"><i class="fa-solid fa-truck-ramp-box"></i></div>
+    </div>
+    <div class="kpi-value">{{ kpis.pending_receipts }}</div>
+    <div class="kpi-subtext">Incoming shipments</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-title">Pending Deliveries</span>
+      <div class="kpi-icon-box kpi-icon-purple"><i class="fa-solid fa-truck-fast"></i></div>
+    </div>
+    <div class="kpi-value">{{ kpis.pending_deliveries }}</div>
+    <div class="kpi-subtext">Outgoing customer orders</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-header">
+      <span class="kpi-title">Scheduled Transfers</span>
+      <div class="kpi-icon-box kpi-icon-blue"><i class="fa-solid fa-right-left"></i></div>
+    </div>
+    <div class="kpi-value">{{ kpis.internal_transfers_scheduled }}</div>
+    <div class="kpi-subtext">Internal movement queues</div>
+  </div>
+</div>
+
+<!-- DASHBOARD GRID: RECENT MOVEMENTS & ALERTS -->
+<div class="dashboard-grid">
+  <!-- RECENT STOCK MOVEMENTS TABLE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i>
+        Recent Stock Movements (Ledger Log)
+      </div>
+      <a href="{{ url_for('ledger.index') }}" class="btn btn-secondary btn-sm">View Full Ledger</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Reference</th>
+              <th>Operation</th>
+              <th>Product</th>
+              <th>Location</th>
+              <th>Qty Change</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in recent_movements %}
+            <tr>
+              <td style="font-size: 12px; color: var(--text-muted);">
+                {{ item.created_at.strftime('%b %d, %H:%M') }}
+              </td>
+              <td><strong>{{ item.reference }}</strong></td>
+              <td>
+                {% if 'Receipt' in item.operation_type %}
+                  <span class="badge badge-op-receipt">Receipt</span>
+                {% elif 'Delivery' in item.operation_type %}
+                  <span class="badge badge-op-delivery">Delivery</span>
+                {% elif 'Transfer' in item.operation_type %}
+                  <span class="badge badge-op-transfer">{{ item.operation_type }}</span>
+                {% else %}
+                  <span class="badge badge-op-adjustment">Adjustment</span>
+                {% endif %}
+              </td>
+              <td>
+                <strong>{{ item.product.name }}</strong>
+                <div style="font-size: 11px; color: var(--text-muted);">SKU: {{ item.product.sku }}</div>
+              </td>
+              <td>{{ item.location.full_name }}</td>
+              <td>
+                {% if item.quantity_change > 0 %}
+                  <span style="color: var(--success); font-weight: 700;">+{{ item.quantity_change }} {{ item.product.unit }}</span>
+                {% elif item.quantity_change < 0 %}
+                  <span style="color: var(--danger); font-weight: 700;">{{ item.quantity_change }} {{ item.product.unit }}</span>
+                {% else %}
+                  <span style="color: var(--text-muted); font-weight: 700;">0 {{ item.product.unit }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                No stock movements logged yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOW STOCK ALERTS WIDGET -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-triangle-exclamation" style="color: var(--warning);"></i>
+        Low Stock Alerts
+      </div>
+      <a href="{{ url_for('products.index', stock_status='low') }}" class="btn btn-secondary btn-sm">Filter Catalog</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <ul style="list-style: none; margin: 0; padding: 0;">
+        {% for alert in low_stock_alerts %}
+        <li style="padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-weight: 700; font-size: 14px;">{{ alert.product.name }}</div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              SKU: {{ alert.product.sku }} | Reorder at: {{ alert.reorder_level }} {{ alert.product.unit }}
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="badge {% if alert.status == 'Out of Stock' %}badge-out-of-stock{% else %}badge-low-stock{% endif %}">
+              {{ alert.status }}
+            </span>
+            <div style="font-size: 13px; font-weight: 700; margin-top: 4px;">
+              {{ alert.total_stock }} / {{ alert.reorder_level }} {{ alert.product.unit }}
+            </div>
+          </div>
+        </li>
+        {% else %}
+        <li style="padding: 30px; text-align: center; color: var(--success); font-weight: 500;">
+          <i class="fa-solid fa-circle-check fa-2x" style="display: block; margin-bottom: 8px;"></i>
+          All product inventory levels are optimal!
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

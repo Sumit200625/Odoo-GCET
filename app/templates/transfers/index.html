@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Internal Transfers — StockSense{% endblock %}
+{% block header_title %}Internal Stock Transfers{% endblock %}
+
+{% block content %}
+<div class="filter-bar">
+  <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+    <span style="font-weight: 600; font-size: 14px;">Status Filter:</span>
+    <a href="{{ url_for('transfers.index') }}" class="btn btn-sm {% if not current_status %}btn-primary{% else %}btn-secondary{% endif %}">All Transfers</a>
+    <a href="{{ url_for('transfers.index', status='Draft') }}" class="btn btn-sm {% if current_status == 'Draft' %}btn-primary{% else %}btn-secondary{% endif %}">Draft</a>
+    <a href="{{ url_for('transfers.index', status='Waiting') }}" class="btn btn-sm {% if current_status == 'Waiting' %}btn-primary{% else %}btn-secondary{% endif %}">Waiting</a>
+    <a href="{{ url_for('transfers.index', status='Done') }}" class="btn btn-sm {% if current_status == 'Done' %}btn-primary{% else %}btn-secondary{% endif %}">Done</a>
+    <a href="{{ url_for('transfers.index', status='Canceled') }}" class="btn btn-sm {% if current_status == 'Canceled' %}btn-primary{% else %}btn-secondary{% endif %}">Canceled</a>
+
+    <div style="margin-left: auto;">
+      <a href="{{ url_for('transfers.create') }}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> Create Internal Transfer
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Source Location</th>
+            <th>Destination Location</th>
+            <th>Created By</th>
+            <th>Date Created</th>
+            <th>Status</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in transfers %}
+          <tr>
+            <td><strong>{{ t.reference }}</strong></td>
+            <td>{{ t.source_location.full_name }}</td>
+            <td><strong style="color: var(--primary);">{{ t.destination_location.full_name }}</strong></td>
+            <td>{{ t.creator.name }}</td>
+            <td style="font-size: 12px; color: var(--text-muted);">{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+              {% if t.status == 'Done' %}
+                <span class="badge badge-done"><i class="fa-solid fa-check-double"></i> Done</span>
+              {% elif t.status == 'Waiting' or t.status == 'Draft' %}
+                <span class="badge badge-waiting"><i class="fa-solid fa-clock"></i> {{ t.status }}</span>
+              {% else %}
+                <span class="badge badge-canceled"><i class="fa-solid fa-ban"></i> Canceled</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <a href="{{ url_for('transfers.view', id=t.id) }}" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-eye"></i> View Transfer
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">
+              No internal transfers found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

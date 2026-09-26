@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Delivery {{ delivery.reference }} — StockSense{% endblock %}
+{% block header_title %}Delivery Order Details & Dispatch{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-truck-fast" style="color: var(--primary);"></i>
+      Delivery Order: {{ delivery.reference }}
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      {% if delivery.status == 'Done' %}
+        <span class="badge badge-done" style="font-size: 14px; padding: 6px 14px;"><i class="fa-solid fa-check-double me-1"></i> Dispatched (Done)</span>
+      {% elif delivery.status == 'Canceled' %}
+        <span class="badge badge-canceled" style="font-size: 14px; padding: 6px 14px;"><i class="fa-solid fa-ban me-1"></i> Canceled</span>
+      {% else %}
+        <span class="badge badge-ready" style="font-size: 14px; padding: 6px 14px;"><i class="fa-solid fa-clock me-1"></i> {{ delivery.status }}</span>
+      {% endif %}
+      <a href="{{ url_for('deliveries.index') }}" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left"></i> Back to List
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 24px;">
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Customer Name</div>
+        <div class="kpi-value" style="font-size: 18px; margin-top: 4px;">{{ delivery.customer_name }}</div>
+      </div>
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Source Pick Location</div>
+        <div class="kpi-value" style="font-size: 16px; margin-top: 4px; color: var(--primary);">
+          {{ delivery.source_location.full_name }}
+        </div>
+      </div>
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Created By</div>
+        <div class="kpi-value" style="font-size: 16px; margin-top: 4px;">{{ delivery.creator.name }}</div>
+      </div>
+      <div class="kpi-card" style="padding: 16px;">
+        <div class="kpi-title">Date Created</div>
+        <div class="kpi-value" style="font-size: 14px; margin-top: 4px;">{{ delivery.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+      </div>
+    </div>
+
+    <h4 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">Products to Deliver</h4>
+    <div class="table-responsive" style="margin-bottom: 28px;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Product Name</th>
+            <th>Requested Qty</th>
+            <th>Available in Location</th>
+            <th>Availability Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in delivery.lines %}
+          {% set avail = availability[line.id] %}
+          <tr>
+            <td><code>{{ line.product.sku }}</code></td>
+            <td><strong>{{ line.product.name }}</strong></td>
+            <td><strong style="font-size: 16px; color: var(--danger);">-{{ line.quantity }} {{ line.product.unit }}</strong></td>
+            <td>{{ avail.available }} {{ line.product.unit }}</td>
+            <td>
+              {% if avail.sufficient %}
+                <span class="badge badge-in-stock"><i class="fa-solid fa-circle-check me-1"></i> Stock Available</span>
+              {% else %}
+                <span class="badge badge-out-of-stock"><i class="fa-solid fa-triangle-exclamation me-1"></i> Insufficient Stock!</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if delivery.status != 'Done' and delivery.status != 'Canceled' %}
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+      <div>
+        <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Validate & Dispatch Order</div>
+        <div style="font-size: 12px; color: var(--text-muted);">Validating will check stock availability. If stock is sufficient, inventory will be deducted and a move history log generated.</div>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <form action="{{ url_for('deliveries.cancel', id=delivery.id) }}" method="POST">
+          <button type="submit" class="btn btn-danger" onclick="return confirm('Cancel this delivery order draft?')">
+            <i class="fa-solid fa-ban"></i> Cancel Order
+          </button>
+        </form>
+
+        <form action="{{ url_for('deliveries.validate', id=delivery.id) }}" method="POST">
+          <button type="submit" class="btn btn-success" style="padding: 10px 24px;">
+            <i class="fa-solid fa-truck-fast"></i> Validate & Deliver Stock
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

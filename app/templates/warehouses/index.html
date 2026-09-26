@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Warehouses & Locations — StockSense{% endblock %}
+{% block header_title %}Warehouses & Location Configuration{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <div>
+    <h2 style="font-size: 18px; font-weight: 700;">Storage Facilities</h2>
+    <div style="font-size: 13px; color: var(--text-muted);">Manage physical warehouses and internal storage zones</div>
+  </div>
+  <div style="display: flex; gap: 12px;">
+    <a href="{{ url_for('warehouses.create_location') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-location-dot"></i> Add Location
+    </a>
+    <a href="{{ url_for('warehouses.create_warehouse') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i> Add Warehouse
+    </a>
+  </div>
+</div>
+
+<div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));">
+  {% for wh in warehouses %}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-warehouse" style="color: var(--primary);"></i>
+        {{ wh.name }}
+        <code style="font-size: 12px; margin-left: 8px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">{{ wh.code }}</code>
+      </div>
+      <span class="badge badge-in-stock">Active</span>
+    </div>
+    <div class="card-body">
+      <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+        <i class="fa-solid fa-map-pin me-1"></i> {{ wh.address or 'Address not specified' }}
+      </div>
+
+      <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 12px;">
+        Storage Locations ({{ wh.locations|length }})
+      </h4>
+
+      <div class="table-responsive">
+        <table class="table" style="font-size: 13px;">
+          <thead>
+            <tr>
+              <th>Location Name</th>
+              <th>Code</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for loc in wh.locations %}
+            <tr>
+              <td><strong>{{ loc.name }}</strong></td>
+              <td><code>{{ loc.code }}</code></td>
+              <td><span class="badge badge-draft">{{ loc.location_type }}</span></td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 16px;">
+                No locations configured under this warehouse.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+    <p style="color: var(--text-muted);">No warehouses set up yet.</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

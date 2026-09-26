@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Login — StockSense{% endblock %}
+
+{% block auth_content %}
+<div class="auth-card">
+  <div class="auth-brand">
+    <div class="brand-logo">
+      <i class="fa-solid fa-boxes-stacked"></i>
+    </div>
+    <div class="auth-title">StockSense</div>
+    <div class="auth-subtitle">Real-time Inventory & Stock Ledger System</div>
+  </div>
+
+  <form action="{{ url_for('auth.login') }}" method="POST">
+    <div class="form-group">
+      <label class="form-label" for="email">Email Address</label>
+      <input type="email" id="email" name="email" class="form-control" placeholder="name@company.com" value="{{ email or '' }}" required autofocus>
+    </div>
+
+    <div class="form-group">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <label class="form-label" for="password" style="margin-bottom: 0;">Password</label>
+        <a href="{{ url_for('auth.reset_password') }}" style="font-size: 12px;">Forgot password?</a>
+      </div>
+      <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+    </div>
+
+    <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+      <input type="checkbox" id="remember" name="remember" style="width: auto;">
+      <label for="remember" style="font-size: 13px; color: var(--text-secondary); cursor: pointer;">Remember me for 30 days</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">
+      <i class="fa-solid fa-right-to-bracket"></i> Sign In to StockSense
+    </button>
+  </form>
+
+  <div class="demo-credentials-box">
+    <strong><i class="fa-solid fa-key me-1"></i> Demo Quick Login Credentials:</strong>
+    <div><strong>Admin:</strong> admin@stocksense.com / Admin@123</div>
+    <div><strong>Manager:</strong> manager@stocksense.com / Manager@123</div>
+    <div><strong>Staff:</strong> staff@stocksense.com / Staff@123</div>
+  </div>
+
+  <div class="auth-footer">
+    Don't have an account? <a href="{{ url_for('auth.register') }}">Create an Account</a>
+  </div>
+</div>
+{% endblock %}

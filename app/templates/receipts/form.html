@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Goods Receipt — StockSense{% endblock %}
+{% block header_title %}Create Goods Receipt (Incoming Stock){% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-truck-ramp-box" style="color: var(--primary);"></i>
+      New Goods Receipt Form
+    </div>
+    <a href="{{ url_for('receipts.index') }}" class="btn btn-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left"></i> Cancel
+    </a>
+  </div>
+
+  <div class="card-body">
+    <form action="{{ url_for('receipts.create') }}" method="POST">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="supplier_name">Supplier Name *</label>
+          <input type="text" id="supplier_name" name="supplier_name" class="form-control" placeholder="e.g. Apex Steel Co." required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="destination_location_id">Destination Storage Location *</label>
+          <select id="destination_location_id" name="destination_location_id" class="form-select" required>
+            <option value="">Select Destination Location</option>
+            {% for loc in locations %}
+              <option value="{{ loc.id }}">{{ loc.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h4 style="font-size: 15px; font-weight: 700;">Receipt Line Items</h4>
+        <button type="button" id="add-line-btn" class="btn btn-secondary btn-sm">
+          <i class="fa-solid fa-plus"></i> Add Line Product
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table line-items-table">
+          <thead>
+            <tr>
+              <th style="width: 60%;">Product *</th>
+              <th style="width: 30%;">Quantity *</th>
+              <th style="width: 10%; text-align: center;">Remove</th>
+            </tr>
+          </thead>
+          <tbody id="line-items-tbody">
+            <tr>
+              <td>
+                <select name="product_id[]" class="form-select" required>
+                  <option value="">Select Product...</option>
+                  {% for p in products %}
+                    <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }}) — Unit: {{ p.unit }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td>
+                <input type="number" step="0.01" min="0.01" name="quantity[]" class="form-control" placeholder="Quantity" required>
+              </td>
+              <td style="text-align: center;">
+                <button type="button" class="btn btn-danger btn-sm remove-line-btn"><i class="fa-solid fa-trash"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 28px; display: flex; justify-content: flex-end; gap: 12px;">
+        <a href="{{ url_for('receipts.index') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> Create Receipt (Draft)
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

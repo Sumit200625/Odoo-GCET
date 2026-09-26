@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Account — StockSense{% endblock %}
+
+{% block auth_content %}
+<div class="auth-card">
+  <div class="auth-brand">
+    <div class="brand-logo">
+      <i class="fa-solid fa-boxes-stacked"></i>
+    </div>
+    <div class="auth-title">Create Account</div>
+    <div class="auth-subtitle">Join StockSense Inventory Management</div>
+  </div>
+
+  <form action="{{ url_for('auth.register') }}" method="POST">
+    <div class="form-group">
+      <label class="form-label" for="name">Full Name</label>
+      <input type="text" id="name" name="name" class="form-control" placeholder="John Doe" value="{{ name or '' }}" required autofocus>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="email">Email Address</label>
+      <input type="email" id="email" name="email" class="form-control" placeholder="john@company.com" value="{{ email or '' }}" required>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="role">User Role</label>
+      <select id="role" name="role" class="form-select">
+        <option value="staff" {% if role == 'staff' %}selected{% endif %}>Warehouse Staff</option>
+        <option value="manager" {% if role == 'manager' %}selected{% endif %}>Inventory Manager</option>
+        <option value="admin" {% if role == 'admin' %}selected{% endif %}>System Administrator</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="password">Password</label>
+      <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="confirm_password">Confirm Password</label>
+      <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="••••••••" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">
+      <i class="fa-solid fa-user-plus"></i> Complete Registration
+    </button>
+  </form>
+
+  <div class="auth-footer">
+    Already registered? <a href="{{ url_for('auth.login') }}">Sign In</a>
+  </div>
+</div>
+{% endblock %}
