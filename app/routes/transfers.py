@@ -7,6 +7,7 @@ from app.models.operation import Transfer, TransferLine
 from app.models.warehouse import Location
 from app.models.product import Product
 from app.services.stock_service import validate_transfer, get_location_stock
+from app.utils.decorators import role_required
 
 transfers_bp = Blueprint('transfers', __name__, url_prefix='/transfers')
 
@@ -100,6 +101,7 @@ def view(id):
 
 @transfers_bp.route('/<int:id>/validate', methods=['POST'])
 @login_required
+@role_required('admin', 'manager')
 def validate(id):
     try:
         transfer = validate_transfer(id, current_user.id)
@@ -114,6 +116,7 @@ def validate(id):
 
 @transfers_bp.route('/<int:id>/cancel', methods=['POST'])
 @login_required
+@role_required('admin', 'manager')
 def cancel(id):
     transfer = Transfer.query.get_or_404(id)
     if transfer.status == 'Done':

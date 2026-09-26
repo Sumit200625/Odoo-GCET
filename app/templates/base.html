@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}StockSense — Real-time Inventory Management System{% endblock %}</title>
+  <title>{% block title %}StockSense — Real-time AI Inventory & Warehouse Intelligence{% endblock %}</title>
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -43,6 +43,20 @@
         <span>Warehouses</span>
       </a>
 
+      <div class="nav-section-label">🔴 Level 1 — AI Intelligence</div>
+
+      <a href="{{ url_for('intelligence.index') }}" class="nav-item {% if 'intelligence' in request.endpoint %}active{% endif %}">
+        <i class="fa-solid fa-brain" style="color: #38bdf8;"></i>
+        <span>AI Intelligence Center</span>
+      </a>
+
+      <div class="nav-section-label">🟠 Level 2 — Warehouse Core</div>
+
+      <a href="{{ url_for('space_management.index') }}" class="nav-item {% if 'space_management' in request.endpoint %}active{% endif %}">
+        <i class="fa-solid fa-cubes-stacked" style="color: #f59e0b;"></i>
+        <span>Space & FEFO Manager</span>
+      </a>
+
       <div class="nav-section-label">Stock Operations</div>
 
       <a href="{{ url_for('receipts.index') }}" class="nav-item {% if 'receipts' in request.endpoint %}active{% endif %}">
@@ -69,7 +83,7 @@
 
       <a href="{{ url_for('ledger.index') }}" class="nav-item {% if 'ledger' in request.endpoint %}active{% endif %}">
         <i class="fa-solid fa-clock-rotate-left"></i>
-        <span>Move History</span>
+        <span>Move History Log</span>
       </a>
 
       {% if current_user.role == 'admin' %}
@@ -105,8 +119,11 @@
   <!-- MAIN CONTENT AREA -->
   <div class="main-content">
     <header class="top-header">
-      <div class="header-title">{% block header_title %}StockSense Dashboard{% endblock %}</div>
+      <div class="header-title">{% block header_title %}StockSense Intelligence Platform{% endblock %}</div>
       <div class="header-actions">
+        <span class="badge badge-done" style="padding: 6px 12px; font-size: 13px; background: #ecfdf5; color: #047857;">
+          <i class="fa-solid fa-heart-pulse me-1"></i> Health: {{ global_health_score }}%
+        </span>
         <span class="badge {% if current_user.role == 'admin' %}badge-canceled{% elif current_user.role == 'manager' %}badge-waiting{% else %}badge-done{% endif %}" style="padding: 6px 12px; font-size: 13px;">
           <i class="fa-solid fa-shield-halved me-1"></i> Role: {{ current_user.role.capitalize() }}
         </span>

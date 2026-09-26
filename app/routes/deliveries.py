@@ -7,6 +7,7 @@ from app.models.operation import Delivery, DeliveryLine
 from app.models.warehouse import Location
 from app.models.product import Product
 from app.services.stock_service import validate_delivery, get_location_stock
+from app.utils.decorators import role_required
 
 deliveries_bp = Blueprint('deliveries', __name__, url_prefix='/deliveries')
 
@@ -83,7 +84,6 @@ def create():
 @login_required
 def view(id):
     delivery = Delivery.query.get_or_404(id)
-    # Calculate current stock availability for each line item
     availability = {}
     for line in delivery.lines:
         avail = get_location_stock(line.product_id, delivery.source_location_id)
@@ -97,6 +97,7 @@ def view(id):
 
 @deliveries_bp.route('/<int:id>/validate', methods=['POST'])
 @login_required
+@role_required('admin', 'manager')
 def validate(id):
     try:
         delivery = validate_delivery(id, current_user.id)
@@ -111,6 +112,7 @@ def validate(id):
 
 @deliveries_bp.route('/<int:id>/cancel', methods=['POST'])
 @login_required
+@role_required('admin', 'manager')
 def cancel(id):
     delivery = Delivery.query.get_or_404(id)
     if delivery.status == 'Done':

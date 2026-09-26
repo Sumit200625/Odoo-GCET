@@ -21,7 +21,11 @@ class Product(db.Model):
     sku = db.Column(db.String(50), unique=True, nullable=False, index=True)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     unit = db.Column(db.String(20), default='pcs')
+    unit_cost = db.Column(db.Float, default=50.0)
     reorder_level = db.Column(db.Float, default=10.0)
+    lead_time_days = db.Column(db.Integer, default=5)
+    abc_class = db.Column(db.String(5), default='B') # A, B, C
+    fsn_class = db.Column(db.String(5), default='F') # F (Fast), S (Slow), N (Non-moving)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -30,6 +34,10 @@ class Product(db.Model):
     @property
     def total_stock(self):
         return sum(b.quantity for b in self.stock_balances)
+
+    @property
+    def total_value(self):
+        return round(self.total_stock * (self.unit_cost or 50.0), 2)
 
     @property
     def stock_status(self):

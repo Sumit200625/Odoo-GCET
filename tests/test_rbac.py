@@ -6,20 +6,20 @@ from app.utils.rbac import is_valid_email
 
 class RBACTestCase(unittest.TestCase):
     def setUp(self):
-        self.app = create_app('default')
-        self.app.config['TESTING'] = True
-        self.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        self.app = create_app('testing')
         self.app_context = self.app.app_context()
         self.app_context.push()
+        
+        db.drop_all()
         db.create_all()
 
         self.client = self.app.test_client()
 
-        # Seed roles
-        self.admin = User(name="Admin User", email="admin@stocksense.com", role="admin")
+        # Seed roles for testing
+        self.admin = User(name="Admin User", email="admin_test@stocksense.com", role="admin")
         self.admin.set_password("AdminPass")
 
-        self.staff = User(name="Staff User", email="staff@stocksense.com", role="staff")
+        self.staff = User(name="Staff User", email="staff_test@stocksense.com", role="staff")
         self.staff.set_password("StaffPass")
 
         db.session.add_all([self.admin, self.staff])
@@ -37,22 +37,19 @@ class RBACTestCase(unittest.TestCase):
         self.assertFalse(is_valid_email("user@domain"))
 
     def test_case_insensitive_login(self):
-        # Test lowercased login with mixed case input
         response = self.client.post('/auth/login', data={
-            'email': 'ADMIN@STOCKSENSE.COM',
+            'email': 'ADMIN_TEST@STOCKSENSE.COM',
             'password': 'AdminPass'
         }, follow_redirects=True)
 
         self.assertIn(b'Welcome back, Admin User!', response.data)
 
     def test_rbac_access_denied_for_staff_on_admin_routes(self):
-        # Log in as Staff
         self.client.post('/auth/login', data={
-            'email': 'staff@stocksense.com',
+            'email': 'staff_test@stocksense.com',
             'password': 'StaffPass'
         })
 
-        # Try accessing Admin Users RBAC route
         response = self.client.get('/auth/users', follow_redirects=True)
         self.assertIn(b'Access Denied', response.data)
 

@@ -10,6 +10,7 @@ from app.models.operation import (
     Adjustment, AdjustmentLine
 )
 from app.models.ledger import StockLedger
+from app.models.supplier import Supplier
 
 __all__ = [
     'User',
@@ -26,5 +27,6 @@ __all__ = [
     'TransferLine',
     'Adjustment',
     'AdjustmentLine',
-    'StockLedger'
+    'StockLedger',
+    'Supplier'
 ]

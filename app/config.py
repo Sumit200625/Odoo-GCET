@@ -8,6 +8,11 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///' + os.path.join(basedir, 'stocksense.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+class TestingConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+
 config = {
-    'default': Config
+    'default': Config,
+    'testing': TestingConfig
 }

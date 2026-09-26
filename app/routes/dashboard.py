@@ -1,9 +1,10 @@
 # app/routes/dashboard.py
-from flask import Blueprint, render_template, request
-from flask_login import login_required
+from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask_login import login_required, current_user
 from app.services.dashboard_service import get_dashboard_kpis, get_recent_movements, get_low_stock_alerts
 from app.models.warehouse import Warehouse
 from app.models.product import Category
+from app.utils.decorators import role_required
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -28,3 +29,9 @@ def index():
         categories=categories,
         selected_wh=selected_wh
     )
+
+@dashboard_bp.route('/settings')
+@login_required
+@role_required('admin', 'manager')
+def settings():
+    return render_template('dashboard/settings.html')

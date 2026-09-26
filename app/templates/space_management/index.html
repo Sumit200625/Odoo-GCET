@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}Warehouse Space & FEFO Intelligence — StockSense{% endblock %}
+{% block header_title %}Level 2 — Warehouse Space, Put-Away & FEFO Intelligence{% endblock %}
+
+{% block content %}
+<!-- SMART PUT-AWAY INTERACTIVE ASSISTANT CARD -->
+<div class="card" style="margin-bottom: 28px; background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i>
+      AI Smart Put-Away Assistant
+    </div>
+    <span class="badge badge-op-transfer">Optimal Rack Recommendation</span>
+  </div>
+  <div class="card-body">
+    <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+      Select an incoming product and quantity to calculate the most optimal warehouse storage location based on available rack capacity and zone proximity.
+    </div>
+
+    <div class="form-grid" style="grid-template-columns: 2fr 1fr 1fr;">
+      <div class="form-group">
+        <label class="form-label" for="putaway_product_id">Incoming Product</label>
+        <select id="putaway_product_id" class="form-select">
+          <option value="">Select Product...</option>
+          {% for p in products %}
+            <option value="{{ p.id }}">{{ p.name }} ({{ p.sku }}) — {{ p.unit }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="putaway_qty">Incoming Quantity</label>
+        <input type="number" step="0.01" min="1" id="putaway_qty" class="form-control" value="50.0">
+      </div>
+
+      <div class="form-group" style="display: flex; align-items: flex-end;">
+        <button type="button" id="calc-putaway-btn" class="btn btn-primary" style="width: 100%;">
+          <i class="fa-solid fa-compass"></i> Find Best Put-Away Rack
+        </button>
+      </div>
+    </div>
+
+    <div id="putaway-results" style="display: none; margin-top: 16px; padding: 16px; background: #eff6ff; border-radius: var(--radius-md); border: 1px solid #bfdbfe;">
+      <div style="font-weight: 700; font-size: 14px; color: #1e40af; margin-bottom: 8px;">
+        <i class="fa-solid fa-circle-check me-1"></i> Top Recommended Put-Away Racks:
+      </div>
+      <ul id="putaway-list" style="margin: 0; padding-left: 20px; font-size: 13px; color: #1e3a8a;"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- WAREHOUSE CAPACITY & SPACE UTILIZATION MAP -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-warehouse" style="color: var(--primary);"></i>
+      Warehouse Location Space Utilization & Capacity Map
+    </div>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Warehouse</th>
+            <th>Location Code</th>
+            <th>Location Name</th>
+            <th>Zone</th>
+            <th>Occupied / Max Capacity</th>
+            <th>Space Utilization Bar</th>
+            <th>Capacity Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in space_matrix %}
+          <tr>
+            <td><strong>{{ item.warehouse.name }}</strong></td>
+            <td><code>{{ item.location.code }}</code></td>
+            <td><strong>{{ item.location.name }}</strong></td>
+            <td><span class="badge badge-draft">{{ item.location.zone }}</span></td>
+            <td>
+              <strong style="font-size: 14px;">{{ item.occupied_qty }} / {{ item.max_capacity }} units</strong>
+            </td>
+            <td style="width: 250px;">
+              <div style="background-color: #e2e8f0; border-radius: 999px; height: 12px; width: 100%; overflow: hidden;">
+                <div style="background-color: {{ item.color }}; height: 100%; width: {{ item.occupancy_pct }}%; border-radius: 999px; transition: width 0.5s ease;"></div>
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; text-align: right;">
+                {{ item.occupancy_pct }}% Occupied
+              </div>
+            </td>
+            <td>
+              <span class="badge" style="background-color: {{ item.color }}22; color: {{ item.color }}; border: 1px solid {{ item.color }}66;">
+                {{ item.status }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <!-- EXPIRY & AGING FEFO AUDIT -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-hourglass-half" style="color: var(--warning);"></i>
+        Expiry & Aging Audit (FEFO Batch Tracking)
+      </div>
+      <span class="badge badge-waiting">FEFO Strategy</span>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Batch #</th>
+              <th>Location</th>
+              <th>Quantity</th>
+              <th>Days Left</th>
+              <th>Urgency</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for alert in expiry_alerts %}
+            <tr>
+              <td><strong>{{ alert.product.name }}</strong></td>
+              <td><code>{{ alert.batch_number }}</code></td>
+              <td style="font-size: 12px;">{{ alert.location.name }}</td>
+              <td><strong>{{ alert.balance.quantity }} {{ alert.product.unit }}</strong></td>
+              <td>
+                <strong style="color: {{ alert.color }};">{{ alert.days_left }} Days</strong>
+              </td>
+              <td>
+                <span class="badge" style="background-color: {{ alert.color }}22; color: {{ alert.color }}; border: 1px solid {{ alert.color }}66;">
+                  {{ alert.urgency }}
+                </span>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--success); padding: 30px;">
+                <i class="fa-solid fa-circle-check fa-2x" style="display: block; margin-bottom: 8px;"></i>
+                No perishable batches expiring within 60 days.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUTBOUND PICKING PRIORITY QUEUE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i class="fa-solid fa-truck-fast" style="color: var(--primary);"></i>
+        Outbound Picking Queue & SLA Priority
+      </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <ul style="list-style: none; margin: 0; padding: 0;">
+        {% for item in picking_queue %}
+        <li style="padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-weight: 700; font-size: 14px;">
+              #{{ item.queue_position }} — {{ item.delivery.reference }}
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              Customer: {{ item.delivery.customer_name }} | Pick Location: {{ item.delivery.source_location.name }}
+            </div>
+          </div>
+          <div style="text-align: right;">
+            {% if item.priority == 'HIGH' %}
+              <span class="badge badge-canceled"><i class="fa-solid fa-fire me-1"></i> High Priority</span>
+            {% else %}
+              <span class="badge badge-draft">Normal Priority</span>
+            {% endif %}
+            <div style="margin-top: 4px;">
+              <a href="{{ url_for('deliveries.view', id=item.delivery.id) }}" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 11px;">
+                Open Pick Ticket
+              </a>
+            </div>
+          </div>
+        </li>
+        {% else %}
+        <li style="padding: 24px; text-align: center; color: var(--text-muted);">
+          No pending outbound delivery orders in queue.
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const calcBtn = document.getElementById('calc-putaway-btn');
+  const productSelect = document.getElementById('putaway_product_id');
+  const qtyInput = document.getElementById('putaway_qty');
+  const resultsDiv = document.getElementById('putaway-results');
+  const listUl = document.getElementById('putaway-list');
+
+  if (calcBtn && productSelect && qtyInput && resultsDiv && listUl) {
+    calcBtn.addEventListener('click', () => {
+      const pid = productSelect.value;
+      const qty = qtyInput.value || 10;
+
+      if (!pid) {
+        alert('Please select a product.');
+        return;
+      }
+
+      fetch(`/space-management/api/put-away?product_id=${pid}&quantity=${qty}`)
+        .then(res => res.json())
+        .then(data => {
+          listUl.innerHTML = '';
+          if (data.recommendations && data.recommendations.length > 0) {
+            data.recommendations.forEach((rec, idx) => {
+              const li = document.createElement('li');
+              li.style.marginBottom = '6px';
+              li.innerHTML = `<strong>Option #${idx + 1}: ${rec.location_name}</strong> (${rec.zone}) — ${rec.available_capacity} free units capacity available. <span style="color: #059669; font-weight:700;">[Score: ${Math.round(rec.occupancy_pct)}% occupied]</span>`;
+              listUl.appendChild(li);
+            });
+            resultsDiv.style.display = 'block';
+          } else {
+            listUl.innerHTML = '<li>No warehouse locations with sufficient free capacity found.</li>';
+            resultsDiv.style.display = 'block';
+          }
+        })
+        .catch(err => console.error('Error calculating putaway:', err));
+    });
+  }
+});
+</script>
+{% endblock %}

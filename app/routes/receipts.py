@@ -7,6 +7,7 @@ from app.models.operation import Receipt, ReceiptLine
 from app.models.warehouse import Location
 from app.models.product import Product
 from app.services.stock_service import validate_receipt
+from app.utils.decorators import role_required
 
 receipts_bp = Blueprint('receipts', __name__, url_prefix='/receipts')
 
@@ -88,6 +89,7 @@ def view(id):
 
 @receipts_bp.route('/<int:id>/validate', methods=['POST'])
 @login_required
+@role_required('admin', 'manager')
 def validate(id):
     try:
         receipt = validate_receipt(id, current_user.id)
@@ -102,6 +104,7 @@ def validate(id):
 
 @receipts_bp.route('/<int:id>/cancel', methods=['POST'])
 @login_required
+@role_required('admin', 'manager')
 def cancel(id):
     receipt = Receipt.query.get_or_404(id)
     if receipt.status == 'Done':

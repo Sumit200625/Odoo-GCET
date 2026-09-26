@@ -10,9 +10,7 @@ from app.services.stock_service import validate_receipt, validate_delivery, vali
 
 class StockSenseTestCase(unittest.TestCase):
     def setUp(self):
-        self.app = create_app('default')
-        self.app.config['TESTING'] = True
-        self.app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        self.app = create_app('testing')
         self.app_context = self.app.app_context()
         self.app_context.push()
         db.create_all()

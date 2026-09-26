@@ -71,26 +71,32 @@
     </div>
 
     {% if receipt.status != 'Done' and receipt.status != 'Canceled' %}
-    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-      <div>
-        <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Validate Receipt</div>
-        <div style="font-size: 12px; color: var(--text-muted);">Validating will instantly update stock balances and commit a permanent move history ledger entry.</div>
-      </div>
+      {% if current_user.role in ['admin', 'manager'] %}
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--text-primary);">Validate Receipt</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Validating will instantly update stock balances and commit a permanent move history ledger entry.</div>
+        </div>
 
-      <div style="display: flex; gap: 12px;">
-        <form action="{{ url_for('receipts.cancel', id=receipt.id) }}" method="POST">
-          <button type="submit" class="btn btn-danger" onclick="return confirm('Cancel this receipt draft?')">
-            <i class="fa-solid fa-ban"></i> Cancel Receipt
-          </button>
-        </form>
+        <div style="display: flex; gap: 12px;">
+          <form action="{{ url_for('receipts.cancel', id=receipt.id) }}" method="POST">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Cancel this receipt draft?')">
+              <i class="fa-solid fa-ban"></i> Cancel Receipt
+            </button>
+          </form>
 
-        <form action="{{ url_for('receipts.validate', id=receipt.id) }}" method="POST">
-          <button type="submit" class="btn btn-success" style="padding: 10px 24px;">
-            <i class="fa-solid fa-check"></i> Validate & Receive Stock
-          </button>
-        </form>
+          <form action="{{ url_for('receipts.validate', id=receipt.id) }}" method="POST">
+            <button type="submit" class="btn btn-success" style="padding: 10px 24px;">
+              <i class="fa-solid fa-check"></i> Validate & Receive Stock
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+      {% else %}
+      <div style="background: #f1f5f9; padding: 16px; border-radius: var(--radius-md); font-size: 13px; color: var(--text-muted); text-align: center;">
+        <i class="fa-solid fa-lock me-1"></i> Receipt validation requires <strong>Manager</strong> or <strong>Admin</strong> privileges.
+      </div>
+      {% endif %}
     {% endif %}
   </div>
 </div>

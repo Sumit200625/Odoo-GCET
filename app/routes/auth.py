@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db
 from app.models.user import User
-from app.utils.rbac import role_required, is_valid_email
+from app.utils.decorators import role_required
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -19,14 +19,9 @@ def login():
         password = request.form.get('password', '')
         remember = True if request.form.get('remember') else False
 
-        if not email or not is_valid_email(email):
-            flash('Please enter a valid email address (e.g., user@stocksense.com).', 'danger')
-            return render_template('auth/login.html', email=email)
-
-        # Case-insensitive email query
         user = User.query.filter(func.lower(User.email) == email).first()
         if not user or not user.check_password(password):
-            flash('Invalid email address or password. Please check your credentials.', 'danger')
+            flash('Invalid email address or password. Please try again.', 'danger')
             return render_template('auth/login.html', email=email)
 
         login_user(user, remember=remember)
@@ -52,17 +47,13 @@ def register():
             flash('All required fields must be filled.', 'danger')
             return render_template('auth/register.html', name=name, email=email, role=role)
 
-        if not is_valid_email(email):
-            flash('Please enter a valid email address format (e.g. name@company.com).', 'danger')
-            return render_template('auth/register.html', name=name, email=email, role=role)
-
         if password != confirm_password:
             flash('Passwords do not match.', 'danger')
             return render_template('auth/register.html', name=name, email=email, role=role)
 
         existing_user = User.query.filter(func.lower(User.email) == email).first()
         if existing_user:
-            flash('This email address is already registered. Please login or use password reset.', 'danger')
+            flash('Email address is already registered.', 'danger')
             return render_template('auth/register.html', name=name, role=role)
 
         user = User(name=name, email=email, role=role)
@@ -90,20 +81,16 @@ def reset_password():
 
         if action == 'request_otp':
             email = request.form.get('email', '').strip().lower()
-            if not email or not is_valid_email(email):
-                flash('Please enter a valid email address.', 'danger')
-                return render_template('auth/reset_password.html', step=1)
-
             user = User.query.filter(func.lower(User.email) == email).first()
             if not user:
-                flash(f'No account found registered under email: {email}', 'danger')
+                flash('No account found with that email address.', 'danger')
                 return render_template('auth/reset_password.html', step=1)
 
             otp = str(random.randint(100000, 999999))
             session['reset_email'] = email
             session['reset_otp'] = otp
 
-            flash(f'DEMO OTP GENERATED: {otp} — Enter this code below to proceed.', 'warning')
+            flash(f'MOCK OTP GENERATED: {otp} — Enter this code below to proceed.', 'warning')
             return render_template('auth/reset_password.html', step=2, email=email, demo_otp=otp)
 
         elif action == 'verify_otp':
@@ -119,7 +106,7 @@ def reset_password():
                 return render_template('auth/reset_password.html', step=1)
 
             if otp_entered != session_otp:
-                flash('Invalid 6-digit OTP code.', 'danger')
+                flash('Invalid OTP code. Please try again.', 'danger')
                 return render_template('auth/reset_password.html', step=2, email=email, demo_otp=session_otp)
 
             if new_password != confirm_password:
@@ -137,14 +124,15 @@ def reset_password():
 
     return render_template('auth/reset_password.html', step=1)
 
-# ADMIN RBAC USER MANAGEMENT ROUTE
+# VIEW ALL USERS (Admin & Manager)
 @auth_bp.route('/users')
 @login_required
-@role_required('admin')
+@role_required('admin', 'manager')
 def users_list():
     users = User.query.order_by(User.id).all()
     return render_template('auth/users.html', users=users)
 
+# MANAGE USER ROLE (Admin Only)
 @auth_bp.route('/users/<int:user_id>/role', methods=['POST'])
 @login_required
 @role_required('admin')
